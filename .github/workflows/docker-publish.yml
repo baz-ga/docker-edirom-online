@@ -19,7 +19,7 @@ on:
     repo: 'Edirom-Online'
     event_type: 'pre-release'
   workflow_dispatch:
-    
+
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -31,8 +31,8 @@ env:
   DOCKERHUB_IMAGE_NAME: docker-edirom-online
 
   # Edirom Online
-  EDIROM_REPO: Edirom/Edirom-Online
-  EDIROM_BRANCH: develop
+  EDIROM_REPO: baz-ga/Edirom-Online
+  EDIROM_BRANCH: bazga/dev
   EDIROM_DIR: edirom-dir
 
 
@@ -122,12 +122,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Login against DockerHub registry except on PR
-      - name: Log in to DockerHub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
-        with:
-          username: ${{ secrets.BWBOHL_DOCKERHUB_USERNAME }}
-          password: ${{ secrets.BWBOHL_DOCKERHUB_TOKEN }}
+      #- name: Log in to DockerHub
+      #  if: github.event_name != 'pull_request'
+      #  uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446
+      #  with:
+      #    username: ${{ secrets.BWBOHL_DOCKERHUB_USERNAME }}
+      #    password: ${{ secrets.BWBOHL_DOCKERHUB_TOKEN }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
@@ -135,9 +135,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            ${{ secrets.BWBOHL_DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE_NAME }}
+          #images: |
+          #  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          #  ${{ secrets.BWBOHL_DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
       # Build and push Docker image with Buildx (don't push on PR)
