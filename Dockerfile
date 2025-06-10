@@ -28,7 +28,7 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
 COPY add-xars/*.xar /tmp/add-xars/
 
 # STAGE 2
-FROM stadlerpeter/existdb:6.4.0
+FROM stadlerpeter/existdb:6.4.0 AS edirom-online
 
 # LABEL about this image
 LABEL org.opencontainers.image.title="Docker Edirom-Online"
