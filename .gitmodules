@@ -1,0 +1,4 @@
+[submodule "gh-asset-downloader"]
+	path = gitmodules/gh-asset-downloader
+	url = https://github.com/baz-ga/gh-asset-downloader.git
+	branch = main
