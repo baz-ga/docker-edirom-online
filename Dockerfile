@@ -1,3 +1,11 @@
+# global definitions
+# syntax=docker/dockerfile:1.4
+# This Dockerfile builds a Docker image for Edirom-Online, a web application displaying music editions.
+# It uses a multi-stage build to fetch the necessary XAR files and set up the environment.
+# The first stage fetches the Edirom-Online XAR files using a script from the GitHub repository.
+# The second stage uses the stadlerpeter/existdb base image to deploy the Edirom-Online application.
+# The image is configured with environment variables for Edirom version, commit, and build date.
+
 # setup build arguments
 ARG EDIROM_VERSION
 ARG EDIROM_COMMIT
