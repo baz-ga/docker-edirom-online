@@ -72,10 +72,6 @@ LABEL org.opencontainers.image.source="https://github.com/bwbohl/docker-edirom-o
 LABEL org.opencontainers.image.url="https://github.com/bwbohl/docker-edirom-online"
 LABEL org.opencontainers.image.version="1.0.0"
 
-# setup environment variables
-ENV EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online
-ENV EXIST_CONTEXT_PATH=/
-ENV EXIST_ENV=development
 
 # switch user to stadlerpeter/existdb user
 USER wegajetty:wegajetty
