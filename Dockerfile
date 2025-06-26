@@ -34,25 +34,32 @@ ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
-# get EDIROM
-## copy gh-asset-downloader to xar-fetcher
+# copy gh-asset-downloader to xar-fetcher
 COPY gitmodules/gh-asset-downloader /opt/gh-asset-downloader
 
-## add requirements to baseimage
-RUN apk add --no-cache bash curl libxml2-utils ncurses
+# copy xar-fetcher-entrypoint.sh to xar-fetcher
+# this script will be executed in the first stage to fetch the XAR files
+# it will use the gh-asset-downloader to download the Edirom XAR files.
+COPY xar-fetcher-entrypoint.sh /opt/xar-fetcher-entrypoint.sh
+
+# add requirements to baseimage
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ --no-install-suggests \
+ bash curl libxml2-utils
 
 ## switch workdir
-WORKDIR /opt/gh-asset-downloader
-
-## run gh-asset-downloader for Edirom Online
-RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
-    /bin/bash -l /opt/gh-asset-downloader/gh-asset-downloader.sh Edirom Edirom-Online "v$EDIROM_VERSION" .xar \
-    && mkdir /tmp/add-xars \
-    && cp Edirom-Online-*.xar /tmp/add-xars/
+WORKDIR /opt
 
 # get ADD-XARS
 ## copy add-xars directory to xar-fetcher
-COPY add-xars/*.xar /tmp/add-xars/
+COPY add-xars/* /tmp/add-xars/
+
+## run gh-asset-downloader for Edirom Online
+RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
+    /bin/bash -l /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION" "$EDIROM_REF" \
+    && mkdir -p /tmp/add-xars \
+    && cp Edirom-Online*.xar /tmp/add-xars/
+
 
 # STAGE 2
 FROM stadlerpeter/existdb:6.4.0 AS edirom-online
