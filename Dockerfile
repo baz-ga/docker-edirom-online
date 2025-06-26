@@ -14,7 +14,7 @@ ARG EDIROM_COMMIT
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # STAGE 1
-FROM alpine:3.21.3 AS xar-fetcher
+FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
 ARG EDIROM_VERSION
