@@ -7,14 +7,25 @@ echo "###################################"
 echo
 echo "This docker container is based on stadlerpeter/existdb:6."
 echo "In order to deploy additional XARs at runtime, e.g.,"
-echo "Edirom Edition data, place tme in a directory on your host"
+echo "Edirom Edition data, place them in a directory on your host"
 echo "and mount it to ›/var/add-xars‹ using the docker run -v flag."
 echo
 
 # check for additional XARs
-echo "checking for XARs at /var/add-xars/"
+echo "Checking for XARs at /var/add-xars/"
+
+# Use nullglob to ensure the glob expands to nothing if no files match,
+# preventing literal "*.xar" from being passed.
+shopt -s nullglob
 xars=(/var/add-xars/*.xar)
-[ -f "$xars" ] && echo "copying additional XARs…" && cp /var/add-xars/*.xar $EXIST_HOME/autodeploy/ || { echo "no XARs found"; }
+if [ ${#xars[@]} -gt 0 ]; then
+    echo "Copying additional XARs: ${xars[@]} to $EXIST_HOME/autodeploy/"
+    cp "${xars[@]}" "$EXIST_HOME/autodeploy/" || { echo "Error: Failed to copy XARs." >&2; exit 1; }
+    echo "XARs copied successfully."
+else
+    echo "No XARs found at /var/add-xars/."
+fi
+shopt -u nullglob # Disable nullglob
 echo
 
 # starting the original image's entrypoint
