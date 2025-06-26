@@ -79,7 +79,7 @@ LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
 
 # LABEL about the software
 LABEL org.opencontainers.image.source="https://github.com/Edirom/Edirom-Online"
-LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.version=$EDIROM_VERSION
 LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
 LABEL org.opencontainers.image.licenses="MIT"
 
