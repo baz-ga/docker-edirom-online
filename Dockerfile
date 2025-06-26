@@ -8,7 +8,9 @@
 
 # setup build arguments
 ARG EDIROM_VERSION
+ARG EDIROM_REF
 ARG EDIROM_COMMIT
+ARG EDIROM_OWNER
 
 # setup build date
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -18,13 +20,17 @@ FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
 ARG EDIROM_VERSION
+ARG EDIROM_REF
 ARG EDIROM_COMMIT
+ARG EDIROM_OWNER
 
 ARG BUILD_DATE
 
 # setup environment variables
 ENV EDIROM_VERSION=${EDIROM_VERSION:-1.0.0}
+ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION"}
 ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
+ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
 # get EDIROM
@@ -52,13 +58,17 @@ FROM stadlerpeter/existdb:6.4.0 AS edirom-online
 
 # setup build arguments
 ARG EDIROM_VERSION
+ARG EDIROM_REF
 ARG EDIROM_COMMIT
+ARG EDIROM_OWNER
 
 ARG BUILD_DATE
 
 # setup EDIROM environment variables
 ENV EDIROM_VERSION=${EDIROM_VERSION:-1.0.0}
+ENV EDIROM_REF=${EDIROM_REF:-"v${EDIROM_VERSION}"}
 ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
+ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
 # setup EXIST environment variables
