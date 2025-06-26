@@ -13,7 +13,7 @@ echo
 
 # check for additional XARs
 echo "Checking for XARs at /var/add-xars/"
-
+echo
 # Use nullglob to ensure the glob expands to nothing if no files match,
 # preventing literal "*.xar" from being passed.
 shopt -s nullglob
@@ -32,6 +32,7 @@ if [ ${#xars[@]} -gt 0 ]; then
     echo
     echo "XARs copied successfully."
 else
+    echo
     echo "No XARs found at /var/add-xars/."
 fi
 shopt -u nullglob # Disable nullglob
