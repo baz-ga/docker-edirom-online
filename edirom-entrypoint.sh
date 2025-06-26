@@ -20,7 +20,16 @@ shopt -s nullglob
 xars=(/var/add-xars/*.xar)
 if [ ${#xars[@]} -gt 0 ]; then
     echo "Copying additional XARs: ${xars[@]} to $EXIST_HOME/autodeploy/"
-    cp "${xars[@]}" "$EXIST_HOME/autodeploy/" || { echo "Error: Failed to copy XARs." >&2; exit 1; }
+    for xar in "${xars[@]}"; do
+        basename_xar=$(basename "$xar")
+        if [[ -f "$EXIST_HOME/autodeploy/$basename_xar" ]]; then
+            echo "Warning: $basename_xar already exists in $EXIST_HOME/autodeploy/. Overwriting."
+        else
+            cp -f "$xar" "$EXIST_HOME/autodeploy/" || { echo "Error: Failed to copy $basename_xar." >&2; exit 1; }
+            echo "Copied $basename_xar to $EXIST_HOME/autodeploy/"
+        fi
+    done
+    echo
     echo "XARs copied successfully."
 else
     echo "No XARs found at /var/add-xars/."
