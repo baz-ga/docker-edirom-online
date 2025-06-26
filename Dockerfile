@@ -15,6 +15,7 @@ ARG EDIROM_OWNER
 # setup build date
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+
 # STAGE 1
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
