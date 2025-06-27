@@ -7,7 +7,7 @@
 # The image is configured with environment variables for Edirom version, commit, and build date.
 
 # setup build arguments
-ARG EDIROM_VERSION
+ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
 ARG EDIROM_COMMIT
 ARG EDIROM_OWNER
@@ -20,7 +20,7 @@ ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
-ARG EDIROM_VERSION
+ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
 ARG EDIROM_COMMIT
 ARG EDIROM_OWNER
@@ -28,8 +28,8 @@ ARG EDIROM_OWNER
 ARG BUILD_DATE
 
 # setup environment variables
-ENV EDIROM_VERSION=${EDIROM_VERSION:-1.0.0}
-ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION"}
+ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
+ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
 ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
@@ -56,7 +56,7 @@ COPY add-xars/* /tmp/add-xars/
 
 ## run gh-asset-downloader for Edirom Online
 RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
-    /bin/bash -l /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION" "$EDIROM_REF" \
+    /bin/bash -l /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF" \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
 
@@ -65,7 +65,7 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
 FROM stadlerpeter/existdb:6.4.0 AS edirom-online
 
 # setup build arguments
-ARG EDIROM_VERSION
+ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
 ARG EDIROM_COMMIT
 ARG EDIROM_OWNER
@@ -73,8 +73,8 @@ ARG EDIROM_OWNER
 ARG BUILD_DATE
 
 # setup EDIROM environment variables
-ENV EDIROM_VERSION=${EDIROM_VERSION:-1.0.0}
-ENV EDIROM_REF=${EDIROM_REF:-"v${EDIROM_VERSION}"}
+ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
+ENV EDIROM_REF=${EDIROM_REF:-"v${EDIROM_VERSION_STRATEGY}"}
 ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
@@ -97,7 +97,7 @@ LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
 
 # LABEL about the software
 LABEL org.opencontainers.image.source="https://github.com/Edirom/Edirom-Online"
-LABEL org.opencontainers.image.version=$EDIROM_VERSION
+LABEL org.opencontainers.image.version=$EDIROM_VERSION_STRATEGY
 LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
 LABEL org.opencontainers.image.licenses="MIT"
 

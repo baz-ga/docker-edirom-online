@@ -22,12 +22,12 @@ echo
 
 EDIROM_OWNER=$1
 EDIROM_REPO=$2 # This is the main repository name, e.g., Edirom-Online
-EDIROM_VERSION=$3 # This is the version strategy, e.g., 2.0.0
+EDIROM_VERSION_STRATEGY=$3 # This is the version strategy, e.g., 2.0.0
 EDIROM_REF=$4 # This is the target reference (tag or branch), e.g., v1.0.0, develop, bazga/candidate
 
 echo "Owner: $EDIROM_OWNER"
 echo "Repo: $EDIROM_REPO"
-echo "Version: $EDIROM_VERSION"
+echo "Version: $EDIROM_VERSION_STRATEGY"
 echo "Ref: $EDIROM_REF"
 echo
 
@@ -157,13 +157,13 @@ GET_XAR() {
 # Main Logic
 # ---
 
-# Validate EDIROM_VERSION is version-like (e.g., 1.0.0).
+# Validate EDIROM_VERSION_STRATEGY is version-like (e.g., 1.0.0).
 # Using a more specific regex to ensure it's strictly three dot-separated numbers.
-if [[ "$EDIROM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "'$EDIROM_VERSION' is a valid version number (e.g., 1.0.0)."
-    EDIROM_VERSION_MAJOR=$(echo "$EDIROM_VERSION" | cut -d. -f1)
-    EDIROM_VERSION_MINOR=$(echo "$EDIROM_VERSION" | cut -d. -f2)
-    EDIROM_VERSION_PATCH=$(echo "$EDIROM_VERSION" | cut -d. -f3)
+if [[ "$EDIROM_VERSION_STRATEGY" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "'$EDIROM_VERSION_STRATEGY' is a valid version number (e.g., 1.0.0)."
+    EDIROM_VERSION_MAJOR=$(echo "$EDIROM_VERSION_STRATEGY" | cut -d. -f1)
+    EDIROM_VERSION_MINOR=$(echo "$EDIROM_VERSION_STRATEGY" | cut -d. -f2)
+    EDIROM_VERSION_PATCH=$(echo "$EDIROM_VERSION_STRATEGY" | cut -d. -f3)
     echo "Parsing to version parts:"
     echo "Major: $EDIROM_VERSION_MAJOR"
     echo "Minor: $EDIROM_VERSION_MINOR"
@@ -171,7 +171,7 @@ if [[ "$EDIROM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo
 
     if [[ "$EDIROM_VERSION_MAJOR" -ge 2 ]]; then
-        echo "Edirom Edition version $EDIROM_VERSION is >= 2.0.0."
+        echo "Edirom Edition version $EDIROM_VERSION_STRATEGY is >= 2.0.0."
         echo "Fetching XAR files from Edirom-Online-Frontend and Edirom-Online-Backend repositories."
 
         # Fetch xar files from Edirom-Online-Backend repository.
@@ -185,8 +185,8 @@ if [[ "$EDIROM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             || { echo "Error: Failed to fetch Edirom-Online-Frontend XAR files." >&2; exit 1; }
         echo "Edirom-Online-Frontend XAR file fetched successfully."
         echo
-    else # EDIROM_VERSION is a version number and less than 2.0.0.
-        echo "Edirom Edition version $EDIROM_VERSION is less than 2.0.0."
+    else # EDIROM_VERSION_STRATEGY is a version number and less than 2.0.0.
+        echo "Edirom Edition version $EDIROM_VERSION_STRATEGY is less than 2.0.0."
         echo "Fetching XAR file from Edirom-Online repository."
         GET_XAR "$EDIROM_OWNER" Edirom-Online "$EDIROM_REF" "*.xar" \
             || { echo "Error: Failed to fetch Edirom-Online XAR files." >&2; exit 1; }
@@ -194,7 +194,7 @@ if [[ "$EDIROM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         echo
     fi
 else
-    echo "Error: EDIROM_VERSION '$EDIROM_VERSION' is not a valid version number (e.g., 1.0.0). Please provide a valid version number." >&2
+    echo "Error: EDIROM_VERSION_STRATEGY '$EDIROM_VERSION_STRATEGY' is not a valid version number (e.g., 1.0.0). Please provide a valid version number." >&2
     exit 1
 fi
 
