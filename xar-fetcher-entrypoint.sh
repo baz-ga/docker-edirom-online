@@ -113,6 +113,11 @@ GET_XAR() {
         cd "$repo_path" || { echo "Error: Failed to change directory to $repo_path" >&2; exit 1; }
 
         # Build the XAR files from the branch.
+        # After cloning and checking out the branch, get the commit hash.
+        local commit_hash
+        commit_hash=$(git rev-parse HEAD)
+        echo "Commit hash for branch '$ref': $commit_hash"
+
         echo "Building XAR files from branch '$ref'..."
         echo "Running build script..."
         if [[ -f build.sh ]]; then
@@ -140,6 +145,10 @@ GET_XAR() {
             cp "${xar_files[@]}" /opt/ || { echo "Error: Failed to copy built XAR files to /opt." >&2; exit 1; }
             echo "XAR files copied successfully."
         fi
+
+        # Set the EDIROM_COMMIT environment variable for the Docker build.
+        echo "EDIROM_COMMIT=$commit_hash" >> "$GITHUB_ENV"
+
         # The trap command will handle cleaning up $temp_dir on exit.
     elif [[ "$release_or_branch" == "release" ]]; then
         echo "Downloading assets from release '$ref'..."
