@@ -9,8 +9,8 @@
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
-ARG EDIROM_COMMIT
 ARG EDIROM_OWNER
+ARG EDIROM_COMMIT
 
 # setup build date
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -22,15 +22,14 @@ FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
-ARG EDIROM_COMMIT
 ARG EDIROM_OWNER
+ARG EDIROM_COMMIT
 
 ARG BUILD_DATE
 
 # setup environment variables
 ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
-ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 
 # copy gh-asset-downloader to xar-fetcher
@@ -59,6 +58,9 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
 
+    # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
+    # This file will be copied to the next stage.
+
 
 # STAGE 2
 FROM stadlerpeter/existdb:6.4.0 AS edirom-online
@@ -66,7 +68,7 @@ FROM stadlerpeter/existdb:6.4.0 AS edirom-online
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_REF
-ARG EDIROM_COMMIT
+
 ARG EDIROM_OWNER
 
 ARG BUILD_DATE
@@ -74,9 +76,22 @@ ARG BUILD_DATE
 # setup EDIROM environment variables
 ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_REF=${EDIROM_REF:-"v${EDIROM_VERSION_STRATEGY}"}
-ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
+
+# Copy the file containing the dynamically determined EDIROM_COMMIT from the xar-fetcher stage
+COPY --from=xar-fetcher /tmp/build_env /tmp/build_env_from_fetcher
+
+# Read the EDIROM_COMMIT value from the copied file into a temporary variable.
+RUN if [ -f /tmp/build_env_from_fetcher ]; then \
+      DYNAMIC_COMMIT_FROM_FILE=$(cat /tmp/build_env_from_fetcher | cut -d'=' -f2); \
+      echo "EDIROM_COMMIT=${DYNAMIC_COMMIT_FROM_FILE:-unknown}" > /tmp/edirom_commit_env; \
+    else \
+      echo "EDIROM_COMMIT=unknown" > /tmp/edirom_commit_env; \
+    fi
+
+# Set EDIROM_COMMIT as ENV using the value from the file
+#ENV EDIROM_COMMIT=$(cat /tmp/edirom_commit_env | cut -d'=' -f2)
 
 # setup EXIST environment variables
 ENV EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online
@@ -97,7 +112,7 @@ LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
 # LABEL about the software
 LABEL org.opencontainers.image.source="https://github.com/Edirom/Edirom-Online"
 LABEL org.opencontainers.image.version=$EDIROM_VERSION_STRATEGY
-LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
+LABEL org.opencontainers.image.revision=${EDIROM_COMMIT}
 LABEL org.opencontainers.image.licenses="MIT"
 
 # switch user to stadlerpeter/existdb user

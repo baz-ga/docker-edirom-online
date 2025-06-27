@@ -56,6 +56,13 @@ GET_XAR() {
     local ref="$3"
     local name="${4:-.xar}" # Default to .xar if not provided
 
+    # GitHub API settings (re-defined for this function's scope)
+    local GH_API="https://api.github.com"
+    local GH_REPO="$GH_API/repos/$owner/$repo"
+    local FORMAT="Accept: application/vnd.github+json"
+    local AUTH="Authorization: Bearer $GITHUB_API_TOKEN"
+    local API_VERSION="X-GitHub-Api-Version: 2022-11-28"
+
     echo "-> Checking reference type for $owner/$repo @ $ref"
     # We need to capture the exit code of the checker script without `set -e`
     # terminating the script. The `|| ref_code=$?` pattern achieves this.
@@ -114,7 +121,9 @@ GET_XAR() {
 
         # Build the XAR files from the branch.
         # After cloning and checking out the branch, get the commit hash.
-        local commit_hash
+        # Initialize commit_hash to an empty string
+        local commit_hash=""
+        # Get the commit hash
         commit_hash=$(git rev-parse HEAD)
         echo "Commit hash for branch '$ref': $commit_hash"
 
@@ -147,15 +156,44 @@ GET_XAR() {
         fi
 
         # Set the EDIROM_COMMIT environment variable for the Docker build.
-        echo "EDIROM_COMMIT=$commit_hash" >> "$GITHUB_ENV"
+        if [[ -n "$commit_hash" ]]; then
+            echo "Setting EDIROM_COMMIT to $commit_hash (from branch $ref)."
+            echo "EDIROM_COMMIT=$commit_hash" >> /tmp/build_env
+        fi
 
         # The trap command will handle cleaning up $temp_dir on exit.
     elif [[ "$release_or_branch" == "release" ]]; then
         echo "Downloading assets from release '$ref'..."
+
+        # Get the commit hash for the release tag
+        local release_api_url="$GH_REPO/releases/tags/$ref"
+        if [ "$ref" = "release-latest" ]; then
+            release_api_url="$GH_REPO/releases/latest"
+        fi
+
+        local release_response
+        release_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$release_api_url")
+
+        local commit_hash_from_release
+        commit_hash_from_release=$(echo "$release_response" | grep -oP '"target_commitish": "\K[^"]+')
+
+        if [[ -n "$commit_hash_from_release" ]]; then
+            echo "Setting EDIROM_COMMIT to $commit_hash_from_release (from release $ref)."
+            echo "EDIROM_COMMIT=$commit_hash_from_release" >> /tmp/build_env
+        else
+            echo "Warning: Could not extract target_commitish from release '$ref'. EDIROM_COMMIT may not be accurate." >&2
+        fi
+
         # Use the gh-asset-downloader script to fetch the XAR files for the release.
         /opt/gh-asset-downloader/gh-asset-downloader.sh "$owner" "$repo" "$ref" "$name" \
             || { echo "Error: Failed to fetch XAR files from $owner/$repo release '$ref'." >&2; exit 1; }
     else
+        # Since we can't reliably get the commit hash from a release tag,
+        # we'll leave EDIROM_COMMIT as is (default or user-provided value).
+        # In the future, the Edirom Online release process should include
+        # the commit hash in the asset name or description.
+        echo "Warning: Could not determine commit hash for release '$ref'.  EDIROM_COMMIT may not be accurate."
+
         echo "Error: Invalid 'release_or_branch' value: $release_or_branch. Expected 'release' or 'branch'." >&2
         exit 1
     fi
