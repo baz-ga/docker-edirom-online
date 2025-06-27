@@ -162,31 +162,60 @@ GET_XAR() {
         fi
 
         # The trap command will handle cleaning up $temp_dir on exit.
-    elif [[ "$release_or_branch" == "release" ]]; then
-        echo "Downloading assets from release '$ref'..."
+        # ...existing code...
+        elif [[ "$release_or_branch" == "release" ]]; then
+            echo "Downloading assets from release '$ref'..."
 
-        # Get the commit hash for the release tag
-        local release_api_url="$GH_REPO/releases/tags/$ref"
-        if [ "$ref" = "release-latest" ]; then
-            release_api_url="$GH_REPO/releases/latest"
-        fi
+            # Get the release API response
+            local release_api_url="$GH_REPO/releases/tags/$ref"
+            if [ "$ref" = "release-latest" ]; then
+                release_api_url="$GH_REPO/releases/latest"
+            fi
+            local release_response
+            release_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$release_api_url")
 
-        local release_response
-        release_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$release_api_url")
+            # Extract the tag name from the release response
+            local tag_name
+            tag_name=$(echo "$release_response" | grep -oP '"tag_name": "\K[^"]+')
+            if [[ -z "$tag_name" ]]; then
+                echo "Warning: Could not extract tag_name from release response." >&2
+            fi
 
-        local commit_hash_from_release
-        commit_hash_from_release=$(echo "$release_response" | grep -oP '"target_commitish": "\K[^"]+')
+            # Get the tag ref object (may be annotated or lightweight)
+            local tag_ref_url="$GH_API/repos/$owner/$repo/git/ref/tags/$tag_name"
+            local tag_ref_response
+            tag_ref_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$tag_ref_url")
+            local tag_object_url
+            tag_object_url=$(echo "$tag_ref_response" | grep -oP '"url": "\K[^"]+' | head -1)
 
-        if [[ -n "$commit_hash_from_release" ]]; then
-            echo "Setting EDIROM_COMMIT to $commit_hash_from_release (from release $ref)."
-            echo "EDIROM_COMMIT=$commit_hash_from_release" >> /tmp/build_env
-        else
-            echo "Warning: Could not extract target_commitish from release '$ref'. EDIROM_COMMIT may not be accurate." >&2
-        fi
+            # Get the tag object to resolve to the commit (for annotated tags)
+            local tag_object_response
+            tag_object_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$tag_object_url")
+            local tag_type
+            tag_type=$(echo "$tag_object_response" | grep -oP '"type": "\K[^"]+')
+            local commit_sha
+            if [[ "$tag_type" == "commit" ]]; then
+                commit_sha=$(echo "$tag_object_response" | grep -oP '"sha": "\K[^"]+' | head -1)
+            elif [[ "$tag_type" == "tag" ]]; then
+                # Annotated tag, follow to the commit object
+                local annotated_commit_url
+                annotated_commit_url=$(echo "$tag_object_response" | grep -oP '"object": {[^}]*"url": "\K[^"]+')
+                local annotated_commit_response
+                annotated_commit_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$annotated_commit_url")
+                commit_sha=$(echo "$annotated_commit_response" | grep -oP '"sha": "\K[^"]+')
+            fi
 
-        # Use the gh-asset-downloader script to fetch the XAR files for the release.
-        /opt/gh-asset-downloader/gh-asset-downloader.sh "$owner" "$repo" "$ref" "$name" \
-            || { echo "Error: Failed to fetch XAR files from $owner/$repo release '$ref'." >&2; exit 1; }
+            if [[ -n "$commit_sha" ]]; then
+                echo "Setting EDIROM_COMMIT to $commit_sha (from release tag $tag_name)."
+                echo "EDIROM_COMMIT=$commit_sha" >> /tmp/build_env
+            else
+                echo "Warning: Could not extract commit SHA from release tag '$tag_name'. EDIROM_COMMIT may not be accurate." >&2
+            fi
+
+            # Use the gh-asset-downloader script to fetch the XAR files for the release.
+            /opt/gh-asset-downloader/gh-asset-downloader.sh "$owner" "$repo" "$ref" "$name" \
+                || { echo "Error: Failed to fetch XAR files from $owner/$repo release '$ref'." >&2; exit 1; }
+    # ...existing
     else
         # Since we can't reliably get the commit hash from a release tag,
         # we'll leave EDIROM_COMMIT as is (default or user-provided value).
