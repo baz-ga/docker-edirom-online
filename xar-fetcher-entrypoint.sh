@@ -14,7 +14,7 @@ echo
 # Ensure GITHUB_API_TOKEN is defined.
 [ -z "${GITHUB_API_TOKEN:-}" ] && { echo "Error: GITHUB_API_TOKEN variable is not defined. Please set it." >&2; exit 1; }
 # Validate number of arguments.
-[ $# -ne 4 ] && { echo "Usage: $0 [owner] [main_repo_name] [edirom_app_version_strategy] [target_ref]" >&2; exit 1; }
+[ $# -ne 4 ] && { echo "Usage: $0 [owner] [main_repo_name] [edirom_version_strategy] [target_ref]" >&2; exit 1; }
 # Enable trace mode if TRACE variable is set to a non-empty string.
 # Using ${TRACE:-} to avoid "unbound variable" error when `set -u` is active.
 [ "${TRACE:-}" ] && set -x
