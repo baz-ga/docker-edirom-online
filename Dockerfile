@@ -32,7 +32,6 @@ ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
 ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
-ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
 # copy gh-asset-downloader to xar-fetcher
 COPY gitmodules/gh-asset-downloader /opt/gh-asset-downloader
