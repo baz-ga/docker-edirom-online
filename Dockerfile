@@ -22,6 +22,7 @@ FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_OWNER
+ARG EDIROM_REF
 
 ARG BUILD_DATE
 
@@ -84,19 +85,18 @@ ENV EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online
 ENV EXIST_CONTEXT_PATH=/
 ENV EXIST_ENV=development
 
-
 # LABEL about this image
-LABEL org.opencontainers.image.title="Docker Edirom-Online"
-LABEL org.opencontainers.image.description="Dockerimage for running Edirom-Online"
-LABEL org.opencontainers.image.documentation="https://github.com/bwbohl/docker-edirom-online"
-LABEL org.opencontainers.image.url="https://github.com/bwbohl/docker-edirom-online"
-LABEL org.opencontainers.image.authors="Benjamin W. Bohl https://github.com/bwbohl"
+LABEL org.opencontainers.image.title="Docker Edirom Online"
+LABEL org.opencontainers.image.description="A Dockerimage running on eXist-db with a predeployed Edirom Online, and options for deploying additional XAR archives on-build or on-run."
+LABEL org.opencontainers.image.documentation="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
+LABEL org.opencontainers.image.url="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
+LABEL org.opencontainers.image.authors="Benjamin W. Bohl https://github.com/${EDIROM_OWNER}"
 LABEL org.opencontainers.image.vendor="Benjamin W. Bohl"
 LABEL org.opencontainers.image.created=$BUILD_DATE
 LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
 
 # LABEL about the software
-LABEL org.opencontainers.image.source="https://github.com/Edirom/Edirom-Online"
+LABEL org.opencontainers.image.source="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
 LABEL org.opencontainers.image.version=$EDIROM_VERSION_STRATEGY
 LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
 LABEL org.opencontainers.image.licenses="MIT"
