@@ -14,7 +14,11 @@ echo
 # If it is not set source ~/.secrets if it exists.
 if [ -z "${GITHUB_API_TOKEN:-}" ]; then
     # Source secrets if they exist, but don't fail if not.
+    echo "GITHUB_API_TOKEN is not set. Checking for ~/.secrets..."
     [ -f ~/.secrets ] && source ~/.secrets || true
+else
+    echo "GITHUB_API_TOKEN is set."
+    echo
 fi
 
 # Ensure GITHUB_API_TOKEN is defined.
