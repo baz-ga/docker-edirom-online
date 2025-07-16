@@ -101,7 +101,8 @@ jobs:
             --build-arg EDIROM_REF=bazga/candidate \
             --build-arg EDIROM_VERSION_STRATEGY=2.0.0 \
             --target xar-fetcher \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            .
 
         #uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
         #with:
