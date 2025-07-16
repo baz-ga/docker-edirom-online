@@ -96,7 +96,7 @@ jobs:
         id: build
         run: |
           ./build.sh \
-            --secret,id=GITHUB_API_TOKEN,required=${{ secrets.GITHUB_API_TOKEN != '' }} \
+            --secret,id=GITHUB_API_TOKEN,env=${{ secrets.GITHUB_TOKEN }} \
             --build-arg EDIROM_OWNER=baz-ga \
             --build-arg EDIROM_REF=bazga/candidate \
             --build-arg EDIROM_VERSION_STRATEGY=2.0.0 \
