@@ -9,8 +9,14 @@ echo "#######################################################"
 echo
 
 # Validate settings.
-# Source secrets if they exist, but don't fail if not.
-[ -f ~/.secrets ] && source ~/.secrets || true
+
+# check if $GITHUB_API_TOKEN is set
+# If it is not set source ~/.secrets if it exists.
+if [ -z "${GITHUB_API_TOKEN:-}" ]; then
+    # Source secrets if they exist, but don't fail if not.
+    [ -f ~/.secrets ] && source ~/.secrets || true
+fi
+
 # Ensure GITHUB_API_TOKEN is defined.
 [ -z "${GITHUB_API_TOKEN:-}" ] && { echo "Error: GITHUB_API_TOKEN variable is not defined. Please set it." >&2; exit 1; }
 # Validate number of arguments.
