@@ -93,7 +93,7 @@ jobs:
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
-        id: build xar-fetcher
+        id: build-xar-fetcher
         #run: |
         #  ./build.sh \
         #    --secret,id=GITHUB_API_TOKEN,env=${{ secrets.GITHUB_TOKEN }} \
