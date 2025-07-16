@@ -119,7 +119,7 @@ GET_XAR() {
         echo "Created temporary directory: $temp_dir"
 
         # Ensure the temporary directory is cleaned up on exit
-        trap 'rm -rf "$temp_dir"' EXIT
+        #trap 'rm -rf "$temp_dir"' EXIT
 
         # Clone the repository and checkout the specified branch into a subdirectory
         local repo_path="$temp_dir/$repo"
