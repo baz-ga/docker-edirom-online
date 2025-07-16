@@ -117,7 +117,7 @@ jobs:
             EDIROM_REF=bazga/candidate
             EDIROM_VERSION_STRATEGY=2.0.0
           secrets: |
-            GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}
+            "GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}"
           target: xar-fetcher
 
       # Sign the resulting Docker image digest except on PRs.
