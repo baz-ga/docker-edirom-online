@@ -47,8 +47,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: 'true'
-          token:  ${{ github.token }}
-          #token: ${{ secrets.PAT_TOKEN }}
+          token:  ${{ secrets.BAZGA_IT_GH }}
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
