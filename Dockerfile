@@ -15,6 +15,8 @@ ARG EDIROM_COMMIT
 # setup build date
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# build arguments for stadlerpeter/existdb
+ARG EXIST_DEFAULT_APP_PATH
 
 # STAGE 1
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
@@ -72,6 +74,9 @@ ARG EDIROM_COMMIT
 
 ARG BUILD_DATE
 
+# build arguments for stadlerpeter/existdb
+ARG EXIST_DEFAULT_APP_PATH
+
 # setup EDIROM environment variables
 ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
@@ -81,7 +86,7 @@ ENV EDIROM_COMMIT=${EDIROM_COMMIT:-"unknown"}
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
 # setup EXIST environment variables
-ENV EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online
+ENV EXIST_DEFAULT_APP_PATH=${EXIST_DEFAULT_APP_PATH:-xmldb:exist:///db/apps/Edirom-Online}
 ENV EXIST_CONTEXT_PATH=/
 ENV EXIST_ENV=development
 
