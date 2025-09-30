@@ -29,15 +29,32 @@ for arg in "${DOCKER_BUILD_ARGS[@]}"; do
         skip_next=0
         continue
     fi
-    if [[ "$arg" == "-t" ]]; then
+    #if --build-arg EDIROM_VERSION_STRATEGY=2.0.0 then add another --build-arg EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online-Frontend
+    if [[ "$arg" == EDIROM_VERSION_STRATEGY=* ]]; then
+        XAR_FETCHER_ARGS+=("$arg")
+        # Extract the version strategy
+        version_strategy=$(echo "$arg" | cut -d'=' -f2)
+        # Add the EXIST_DEFAULT_APP_PATH argument based on the version strategy
+        if [[ "$version_strategy" == "2.0.0" ]]; then
+            XAR_FETCHER_ARGS+=("--build-arg" "EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online-Frontend")
+        else
+            XAR_FETCHER_ARGS+=("--build-arg" "EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online")
+        fi
+        skip_next=0
+        continue
+    fi
+    # Skip the -t or --tag argument and the next value
+    if [[ "$arg" == "-t" ]] || [[ "$arg" == --tag ]]; then
         skip_next=1
         continue
     fi
+    # Add the current argument to the list
     XAR_FETCHER_ARGS+=("$arg")
 done
 
 # 1. Build xar-fetcher stage and extract the commit SHA
 echo "Building xar-fetcher stage to fetch EDIROM commit..."
+echo "Using these build arguments: ${XAR_FETCHER_ARGS[*]}"
 # Ensure the xar-fetcher stage is built first to get the EDIROM commit
 # This stage will create a file /tmp/build_env with the EDIROM_COMMIT
 docker buildx build --target xar-fetcher -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
