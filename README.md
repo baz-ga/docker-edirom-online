@@ -130,7 +130,9 @@ As the final stage of the Docker image is based on stadlerpeter/existdb:6.4.0, a
 
 # Licenses
 
-This software is published under the terms of the _GNU General Public License 3_ ([GPLv3](LICENSE-GPLv3.md)).
+This software is published under the terms of the _GNU General Public License 3_ ([GPL-3.0-only](LICENSE-GPLv3.md)).
+
+Code required for execution of this software is published under the terms of the _GNU General Public License 3_ ([GPL-3.0-only](LICENSE-GPL-3.0-only)) license, corresponding documentation is published under the terms of the _Creative Commons Attribution-ShareAlike 4.0 International_ license ([CC-BY-SA 4.0](LICENSE-CC-BY-SA-4.0)). For a detailed clarification, please consult the individual SPDX-License license statement in the preamble of each file.
 
 ## Component Licenses
 
