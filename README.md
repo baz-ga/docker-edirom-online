@@ -6,11 +6,11 @@ This Docker image is a multi-stage Docker image and has the following stages:
 
 * STAGE 1: **xar-fetcher**
 
- The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to obtain the EXPath Packages (XAR archives) that are to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
+  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
 
 * STAGE 2: **edirom-online**
 
- The *edirom-online* stage is based on *stadlerpeter/existdb:6.4.0*, which runs an eXist database. *STAGE 2* copies XAR archives fetched by *STAGE 1* and places them into the `autodeploy` directory of the eXist database. Moreover, it provides a method for deploying additional XAR archives to the eXist database when running the Docker image for the first time (cf. [Running the Docker Image](#running-the-docker-image)).
+  The *edirom-online* stage is based on *stadlerpeter/existdb:6.4.0*, which runs an eXist database. *STAGE 2* copies XAR archives fetched by *STAGE 1* and places them into the `autodeploy` directory of the eXist database. Moreover, it provides a method for deploying additional XAR archives to the eXist database when running the Docker image for the first time (cf. [Running the Docker Image](#running-the-docker-image)).
 
 ## Pulling the Docker Image
 
@@ -50,15 +50,15 @@ This Docker image overrides the following environment variables if not set to ot
 
 * **EXIST_DEFAULT_APP_PATH**
 
- Set to `xmldb:exist:///db/apps/Edirom-Online` to make Edirom Online the default app.
+  Set to `xmldb:exist:///db/apps/Edirom-Online` to make Edirom Online the default app.
 
 * **EXIST_CONTEXT_PATH**
 
-Set to `/` to make Edirom Online available at the root of the configured host and port.
+  Set to `/` to make Edirom Online available at the root of the configured host and port.
 
 * **EXIST_ENV**
 
- Set to `development`.
+  Set to `development`.
 
 
 ## Building the Docker Image
@@ -86,35 +86,36 @@ The *xar-fetcher* stage uses the [xar-fetcher-entrypoint.sh](xar-fetcher-entrypo
 
 * **EDIROM_VERSION_STRATEGY**
 
- The version strategy for fetching the Edirom Online XAR archives. (default: 1.0.0).
+  The version strategy for fetching the Edirom Online XAR archives. (default: 1.0.0).
 
- The build differentiates between values greater than or equal to `2.0.0` and values less than `2.0.0` and applies different strategies:
+  The build differentiates between values greater than or equal to `2.0.0` and values less than `2.0.0` and applies different strategies:
 
-    * < 2.0.0: download a monolithic Edirom Online including both the frontend and the backend. The assumed repository name is `Edirom-Online`.
+  * < 2.0.0: download a monolithic Edirom Online including both the frontend and the backend. The assumed repository name is `Edirom-Online`.
 
-    * &gt;= 2.0.0: download separate Edirom Online Frontend and Edirom Online Backend. The assumed repository names are `Edirom-Online-Frontend` and `Edirom-Online-Backend`.
+  * &gt;= 2.0.0: download separate Edirom Online Frontend and Edirom Online Backend. The assumed repository names are `Edirom-Online-Frontend` and `Edirom-Online-Backend`.
 
 * **EDIROM_OWNER**
 
- The owner (organisation or user) of the `Edirom-Online` or `Edirom-Online-Frontend` and `Edirom-Online-Backend` repositories on GitHub (default: “Edirom”).
+  The owner (organisation or user) of the `Edirom-Online` or `Edirom-Online-Frontend` and `Edirom-Online-Backend` repositories on GitHub (default: “Edirom”).
 
 * **EDIROM_REF**
 
- The git reference (branch or tag) to use for fetching the Edirom Online XAR archives (default: v${EDIROM_VERSION_STRATEGY}).
+  The git reference (branch or tag) to use for fetching the Edirom Online XAR archives (default: v${EDIROM_VERSION_STRATEGY}).
 
- If the reference is a tag, the build assumes a tagged release and downloads any XAR archive (.xar) from the release assets.
+  If the reference is a tag, the build assumes a tagged release and downloads any XAR archive (.xar) from the release assets.
 
- If the reference is a branch, the build will check out the branch and try to run `build.sh` in the branch’s root to create an XAR archive.
+  If the reference is a branch, the build will check out the branch and try to run `build.sh` in the branch’s root to create an XAR archive.
 
 
 ### Other Build Arguments (ARGs)
 
 * **EDIROM_COMMIT**
 
- The git SHA of the Edirom Online version (default: “unknown”). Will be used in the metadata of the final Docker image. When you build the image using [build.sh](build.sh) from this repository, the git SHA of the installed Edirom XAR will be automatically determined.
+  The git SHA of the Edirom Online version (default: “unknown”). Will be used in the metadata of the final Docker image. When you build the image using [build.sh](build.sh) from this repository, the git SHA of the installed Edirom XAR will be automatically determined.
 
 * **BUILD_DATE**
- The date when the Docker image was built (default: 1970-01-01T00:00:00Z).
+
+  The date when the Docker image was built (default: 1970-01-01T00:00:00Z).
 
 ### eXist-db Build Arguments
 
