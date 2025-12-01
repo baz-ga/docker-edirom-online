@@ -6,7 +6,7 @@ This Docker image is a multi-stage Docker image and has the following stages:
 
 * STAGE 1: **xar-fetcher**
 
- The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to obtain the EXPath Packages resp. XAR archives that are to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
+ The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to obtain the EXPath Packages (XAR archives) that are to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
 
 * STAGE 2: **edirom-online**
 
@@ -35,7 +35,7 @@ Suppose you want to deploy additional XAR archives to the eXist database when ru
 docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/bwbohl/docker-edirom-online
 ```
 
-The final image (aka *STAGE 2*) will copy any XAR archive in your local directory to the autodeploy directory of the eXist database and thus deploy it on first run.
+The final image (i.e., *STAGE 2*) will copy any XAR archive in your local directory to the autodeploy directory of the eXist database and thus deploy it on first run.
 
 > [!IMPORTANT]
 > Deploying additional XAR archives to eXist-db will only work when starting the database for the first time!
