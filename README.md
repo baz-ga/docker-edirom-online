@@ -86,7 +86,7 @@ The *xar-fetcher* stage uses the [xar-fetcher-entrypoint.sh](xar-fetcher-entrypo
 
 * **EDIROM_VERSION_STRATEGY**
 
-  The version strategy for fetching the Edirom Online XAR archives. (default: 1.0.0).
+  The version strategy for fetching the Edirom Online XAR archives. (default: `1.0.0`).
 
   The build differentiates between values greater than or equal to `2.0.0` and values less than `2.0.0` and applies different strategies:
 
@@ -96,11 +96,11 @@ The *xar-fetcher* stage uses the [xar-fetcher-entrypoint.sh](xar-fetcher-entrypo
 
 * **EDIROM_OWNER**
 
-  The owner (organisation or user) of the `Edirom-Online` or `Edirom-Online-Frontend` and `Edirom-Online-Backend` repositories on GitHub (default: “Edirom”).
+  The owner (organisation or user) of the `Edirom-Online` or `Edirom-Online-Frontend` and `Edirom-Online-Backend` repositories on GitHub (default: `Edirom`).
 
 * **EDIROM_REF**
 
-  The git reference (branch or tag) to use for fetching the Edirom Online XAR archives (default: v${EDIROM_VERSION_STRATEGY}).
+  The git reference (branch or tag) to use for fetching the Edirom Online XAR archives (default: `v${EDIROM_VERSION_STRATEGY}`).
 
   If the reference is a tag, the build assumes a tagged release and downloads any XAR archive (.xar) from the release assets.
 
@@ -111,11 +111,11 @@ The *xar-fetcher* stage uses the [xar-fetcher-entrypoint.sh](xar-fetcher-entrypo
 
 * **EDIROM_COMMIT**
 
-  The git SHA of the Edirom Online version (default: “unknown”). Will be used in the metadata of the final Docker image. When you build the image using [build.sh](build.sh) from this repository, the git SHA of the installed Edirom XAR will be automatically determined.
+  The git SHA of the Edirom Online version (default: `unknown`). Will be used in the metadata of the final Docker image. When you build the image using [build.sh](build.sh) from this repository, the git SHA of the installed Edirom XAR will be automatically determined.
 
 * **BUILD_DATE**
 
-  The date when the Docker image was built (default: 1970-01-01T00:00:00Z).
+  The date when the Docker image was built (default: `1970-01-01T00:00:00Z`).
 
 ### eXist-db Build Arguments
 
