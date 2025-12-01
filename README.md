@@ -14,7 +14,13 @@ This Docker image is a multi-stage Docker image and has the following stages:
 
 ## Pulling the Docker Image
 
-<!--TODO describe how to pull -->
+If you want to pull the latest version of a pre-built Docker image run:
+
+```bash
+docker pull ghcr.io/bwbohl/docker-edirom-online:latest
+```
+
+For available tags please visit: https://github.com/baz-ga/docker-edirom-online/pkgs/container/docker-edirom-online
 
 ## Running the Docker Image
 
