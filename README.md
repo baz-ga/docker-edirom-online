@@ -63,7 +63,7 @@ This Docker image overrides the following environment variables if not set to ot
 
 ## Building the Docker Image
 
-> [!WARNING] Building this Docker image requires a *GitHub API Token* for fetching the Edirom XAR archives. There are several ways to provide your GitHub API Token securely.
+> [!WARNING] Building this Docker image requires a *GitHub API Token* for fetching the Edirom XAR archives. There are several ways to provide your GitHub API Token securely (cf. [Docker build secrets documentation](https://docs.docker.com/build/building/secrets/)).
 
 For illustrative purposes, let’s consider you save it in a simple text file, e.g., called `MY_GITHUB_API_TOKEN`, in the form:
 
