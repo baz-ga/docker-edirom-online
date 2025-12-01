@@ -128,13 +128,13 @@ The *xar-fetcher* stage uses the [xar-fetcher-entrypoint.sh](xar-fetcher-entrypo
 As the final stage of the Docker image is based on stadlerpeter/existdb:6.4.0, all build arguments defined for it are valid additional build arguments for the Docker image. For an overview, please visit the [corresponding documentation](https://github.com/peterstadler/existdb-docker/blob/69678f7f61e0d2f5a6dcf2993568dbdbd01f897b/README.md).
 
 
-# Licenses
+# Licences
 
 This software is published under the terms of the _GNU General Public License 3_ ([GPL-3.0-only](LICENSE-GPLv3.md)).
 
-Code required for execution of this software is published under the terms of the _GNU General Public License 3_ ([GPL-3.0-only](LICENSE-GPL-3.0-only)) license, corresponding documentation is published under the terms of the _Creative Commons Attribution-ShareAlike 4.0 International_ license ([CC-BY-SA 4.0](LICENSE-CC-BY-SA-4.0)). For a detailed clarification, please consult the individual SPDX-License license statement in the preamble of each file.
+Code required for execution of this software is published under the terms of the _GNU General Public License 3_ ([GPL-3.0-only](LICENSE-GPL-3.0-only)) licence, corresponding documentation is published under the terms of the _Creative Commons Attribution-ShareAlike 4.0 International_ licence ([CC-BY-SA 4.0](LICENSE-CC-BY-SA-4.0)). For a detailed clarification, please consult the individual licence and SPDX-License-Identifier statements in the preamble of each file.
 
-## Component Licenses
+## Component Licences
 
 ### Stage 1 (xar-fetcher)
 
@@ -146,17 +146,17 @@ Code required for execution of this software is published under the terms of the
 - Base image: [stadlerpeter/existdb](https://github.com/peterstadler/existdb-docker) - MIT License
   - Based on: [eclipse-temurin:17-jre](https://hub.docker.com/_/eclipse-temurin) - Apache License 2.0
   - Includes: OpenJDK - GPLv2 with Classpath Exception
-    - See [DockerHub](https://hub.docker.com/_/eclipse-temurin) for additional license information
+    - See [DockerHub](https://hub.docker.com/_/eclipse-temurin) for additional licence information
 - [eXist-db](https://github.com/exist-db/exist) - LGPL-2.1
 - [Edirom Online](https://github.com/Edirom/Edirom-Online) - GPLv3
 
 ## Additional Software
 
-The referenced Docker images may contain additional software under various licenses.
+The referenced Docker images may contain additional software under various licences.
 
 ## User Responsibility
 
-It is the responsibility of the user of any pre-built image to ensure that any use complies with all relevant licenses for all software contained within.
+It is the responsibility of the user of any pre-built image to ensure that any use complies with all relevant licences for all software contained within.
 
 
 # Acknowledgements
