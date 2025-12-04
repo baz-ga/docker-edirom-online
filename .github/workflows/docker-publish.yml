@@ -47,8 +47,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          submodules: 'true'
-          token:  ${{ secrets.BAZGA_ACCESS }}
+          submodules: recursive
+          token: ${{ secrets.BAZGA_ACCESS }}
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
@@ -124,7 +124,13 @@ jobs:
             EDIROM_VERSION_STRATEGY=2.0.0
           secrets: |
             "GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}"
-          target: xar-fetcher
+
+      - name: Debug build outputs
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Digest: ${{ steps.build-xar-fetcher.outputs.digest }}"
+          echo "ImageID: ${{ steps.build-xar-fetcher.outputs.imageid }}"
+          echo "Metadata: ${{ steps.build-xar-fetcher.outputs.metadata }}"
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
@@ -132,13 +138,18 @@ jobs:
       # transparency data even for private images, pass --force to cosign below.
       # https://github.com/sigstore/cosign
       - name: Sign the images with GitHub OIDC Token
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.build-xar-fetcher.outputs.digest != ''
         env:
           DIGEST: ${{ steps.build-xar-fetcher.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          if [ -z "$DIGEST" ]; then
+            echo "Error: DIGEST is empty. Skipping signing."
+            exit 1
+          fi
           images=""
           for tag in ${TAGS}; do
             images+="${tag}@${DIGEST} "
           done
+          echo "Signing images: ${images}"
           cosign sign --yes ${images}
