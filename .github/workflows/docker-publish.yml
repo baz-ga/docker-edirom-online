@@ -134,7 +134,7 @@ jobs:
       - name: Sign the images with GitHub OIDC Token
         if: github.event_name != 'pull_request'
         env:
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          DIGEST: ${{ steps.build-xar-fetcher.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           images=""
