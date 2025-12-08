@@ -44,10 +44,10 @@ jobs:
     steps:
              
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
-          submodules: 'true'
-          token:  ${{ secrets.BAZGA_ACCESS }}
+          submodules: recursive
+          token: ${{ secrets.BAZGA_ACCESS }}
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
@@ -77,16 +77,16 @@ jobs:
       # Login against DockerHub registry except on PR
       #- name: Log in to DockerHub
       #  if: github.event_name != 'pull_request'
-      #  uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      #  uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446
       #  with:
-      #    username: ${{ secrets.BWBOHL_DOCKERHUB_USERNAME }}
-      #    password: ${{ secrets.BWBOHL_DOCKERHUB_TOKEN }}
+      #    username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
         with:
           #images: |
           #  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -109,7 +109,8 @@ jobs:
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          #push: ${{ github.event_name != 'pull_request' }}
+          push: false
           platforms: |
             linux/amd64
             linux/arm64/v8
@@ -121,7 +122,13 @@ jobs:
             EDIROM_VERSION_STRATEGY=2.0.0
           secrets: |
             "GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}"
-          target: xar-fetcher
+
+      - name: Debug build outputs
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Digest: ${{ steps.build-xar-fetcher.outputs.digest }}"
+          echo "ImageID: ${{ steps.build-xar-fetcher.outputs.imageid }}"
+          echo "Metadata: ${{ steps.build-xar-fetcher.outputs.metadata }}"
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
@@ -129,13 +136,18 @@ jobs:
       # transparency data even for private images, pass --force to cosign below.
       # https://github.com/sigstore/cosign
       - name: Sign the images with GitHub OIDC Token
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.build-xar-fetcher.outputs.digest != ''
         env:
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          DIGEST: ${{ steps.build-xar-fetcher.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          if [ -z "$DIGEST" ]; then
+            echo "Error: DIGEST is empty. Skipping signing."
+            exit 1
+          fi
           images=""
           for tag in ${TAGS}; do
             images+="${tag}@${DIGEST} "
           done
+          echo "Signing images: ${images}"
           cosign sign --yes ${images}
