@@ -48,6 +48,15 @@ for arg in "${DOCKER_BUILD_ARGS[@]}"; do
         skip_next=1
         continue
     fi
+    # Skip --push and --load flags (no value follows)
+    if [[ "$arg" == "--push" ]] || [[ "$arg" == "--load" ]]; then
+        continue
+    fi
+    # Skip --platform and its value
+    if [[ "$arg" == "--platform" ]]; then
+        skip_next=1
+        continue
+    fi
     # Add the current argument to the list
     XAR_FETCHER_ARGS+=("$arg")
 done
@@ -57,7 +66,7 @@ echo "Building xar-fetcher stage to fetch EDIROM commit..."
 echo "Using these build arguments: ${XAR_FETCHER_ARGS[*]}"
 # Ensure the xar-fetcher stage is built first to get the EDIROM commit
 # This stage will create a file /tmp/build_env with the EDIROM_COMMIT
-docker buildx build --target xar-fetcher -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
+docker buildx build --target xar-fetcher --load -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
     && echo "xar-fetcher stage built successfully." \
     || echo "Error building xar-fetcher stage."
 
