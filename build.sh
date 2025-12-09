@@ -48,6 +48,15 @@ for arg in "${DOCKER_BUILD_ARGS[@]}"; do
         skip_next=1
         continue
     fi
+    # Skip --push and --load flags (no value follows)
+    if [[ "$arg" == "--push" ]] || [[ "$arg" == "--load" ]]; then
+        continue
+    fi
+    # Skip --platform and its value
+    if [[ "$arg" == "--platform" ]]; then
+        skip_next=1
+        continue
+    fi
     # Add the current argument to the list
     XAR_FETCHER_ARGS+=("$arg")
 done
