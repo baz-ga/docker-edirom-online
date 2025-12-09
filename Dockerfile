@@ -54,7 +54,7 @@ WORKDIR /opt
 COPY add-xars/* /tmp/add-xars/
 
 ## run gh-asset-downloader for Edirom Online
-RUN --mount=type=secret,id=GITHUB_API_TOKEN,target=/root/.secrets,env=GITHUB_API_TOKEN \
+RUN --mount=type=secret,id=GITHUB_API_TOKEN,env=GITHUB_API_TOKEN \
     /bin/bash -l /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF" \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
