@@ -66,7 +66,7 @@ echo "Building xar-fetcher stage to fetch EDIROM commit..."
 echo "Using these build arguments: ${XAR_FETCHER_ARGS[*]}"
 # Ensure the xar-fetcher stage is built first to get the EDIROM commit
 # This stage will create a file /tmp/build_env with the EDIROM_COMMIT
-docker buildx build --target xar-fetcher -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
+docker buildx build --target xar-fetcher --load -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
     && echo "xar-fetcher stage built successfully." \
     || echo "Error building xar-fetcher stage."
 
