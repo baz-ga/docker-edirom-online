@@ -11,11 +11,16 @@ echo
 # Validate settings.
 
 # check if $GITHUB_API_TOKEN is set
-# If it is not set source ~/.secrets if it exists.
+# If it is not set, try to load it from ~/.secrets if it exists.
 if [ -z "${GITHUB_API_TOKEN:-}" ]; then
-    # Source secrets if they exist, but don't fail if not.
     echo "GITHUB_API_TOKEN is not set. Checking for ~/.secrets..."
-    [ -f ~/.secrets ] && source ~/.secrets || true
+    if [ -f ~/.secrets ]; then
+        # Source the file (expects GITHUB_API_TOKEN=... or export GITHUB_API_TOKEN=...)
+        source ~/.secrets 2>/dev/null || true
+        # Ensure it's exported (in case file has GITHUB_API_TOKEN=... without export)
+        [ -n "${GITHUB_API_TOKEN:-}" ] && export GITHUB_API_TOKEN
+        echo "GITHUB_API_TOKEN loaded from ~/.secrets"
+    fi
 else
     echo "GITHUB_API_TOKEN is set."
     echo
