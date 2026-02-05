@@ -68,7 +68,7 @@ echo "Using these build arguments: ${XAR_FETCHER_ARGS[*]}"
 # This stage will create a file /tmp/build_env with the EDIROM_COMMIT
 docker buildx build --target xar-fetcher --load -t temp-xar-fetcher "${XAR_FETCHER_ARGS[@]}" . \
     && echo "xar-fetcher stage built successfully." \
-    || echo "Error building xar-fetcher stage."
+    || { echo "Error building xar-fetcher stage."; exit 1; }
 
 # Create a temporary container to extract the build_env file
 # This file contains the EDIROM_COMMIT value
