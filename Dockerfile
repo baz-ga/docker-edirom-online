@@ -33,6 +33,9 @@ ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
 
+# Add Sencha Cmd to PATH
+ENV PATH="/opt/Sencha/Cmd:${PATH}"
+
 # copy gh-asset-downloader to xar-fetcher
 COPY gitmodules/gh-asset-downloader /opt/gh-asset-downloader
 
