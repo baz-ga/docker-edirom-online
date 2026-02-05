@@ -130,7 +130,7 @@ jobs:
 
           # Get the image digest for signing
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            DIGEST=$(docker buildx imagetools inspect "$FIRST_TAG" --format "{{.Digest}}")
+            DIGEST=$(docker buildx imagetools inspect "$FIRST_TAG" --format "{{json .Manifest.Digest}}" | tr -d '"')
             echo "digest=$DIGEST" >> $GITHUB_OUTPUT
           fi
 
