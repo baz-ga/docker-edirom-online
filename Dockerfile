@@ -54,10 +54,14 @@ WORKDIR /opt
 COPY add-xars/* /tmp/add-xars/
 
 ## run gh-asset-downloader for Edirom Online
-RUN --mount=type=secret,id=GITHUB_API_TOKEN,env=GITHUB_API_TOKEN \
-    /bin/bash -l /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF" \
+RUN --mount=type=secret,id=GITHUB_API_TOKEN \
+    export GITHUB_API_TOKEN=$(cat /run/secrets/GITHUB_API_TOKEN) && \
+    echo "Token length: ${#GITHUB_API_TOKEN}" && \
+    /bin/bash /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF" \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
+    
+    #/bin/bash -c "echo \$GITHUB_API_TOKEN \$EDIROM_OWNER Edirom-Online \$EDIROM_VERSION_STRATEGY \$EDIROM_REF"
 
     # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
     # This file will be copied to the next stage.
