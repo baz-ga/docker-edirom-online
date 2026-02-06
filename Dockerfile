@@ -113,14 +113,11 @@ LABEL org.opencontainers.image.version=$EDIROM_VERSION_STRATEGY
 LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
 LABEL org.opencontainers.image.licenses="MIT"
 
-# switch user to stadlerpeter/existdb user
-USER wegajetty:wegajetty
-
 # copy XARs from xar-fetcher (STAGE 1)
 COPY --from=xar-fetcher /tmp/add-xars/*.xar ${EXIST_HOME}/autodeploy/
 
 # copy edirom-entrypoint.sh
-COPY --chown=wegajetty:wegajetty edirom-entrypoint.sh ${EXIST_HOME}/
+COPY edirom-entrypoint.sh ${EXIST_HOME}/
 
 # on run execute entrypoint
 CMD ["./edirom-entrypoint.sh"]
