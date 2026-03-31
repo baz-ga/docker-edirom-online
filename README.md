@@ -69,19 +69,59 @@ This Docker image overrides the following environment variables if not set to ot
 
 ## Building the Docker Image
 
+> [!WARNING] This repository uses gitmodules. This requires a recursive cehckout or fetching the submodles after cloning.
+
+For a recursive clone do:
+```bash
+git clone --recurse-submodules https://github.com/baz-ga/docker-edirom-online.git
+````
+
+For activating the submodules after cloning tis repositora do:
+```bash
+git submodule update --init --recursive
+```
+
 > [!WARNING] Building this Docker image requires a *GitHub API Token* for fetching the Edirom XAR archives. There are several ways to provide your GitHub API Token securely (cf. [Docker build secrets documentation](https://docs.docker.com/build/building/secrets/)).
 
-For illustrative purposes, let’s consider you save it in a simple text file, e.g., called `MY_GITHUB_API_TOKEN`, in the form:
+For illustrative purposes, let's consider you save it in a simple text file, e.g., called `MY_GITHUB_API_TOKEN`. The file should contain a variable assignment in one of the following formats:
 
-```txt
-GITHUB_API_TOKEN=ghp_************************
+**Option 1: Variable assignment (without export)**
+```bash
+GITHUB_API_TOKEN="ghp_************************"
 ```
 
-When issuing the build, you should provide this file using the `--secret`option, as in the following example:
+**Option 2: Variable assignment (with export)**
+```bash
+export GITHUB_API_TOKEN="ghp_************************"
+```
+
+Both formats are supported and will be sourced by the build script.
+
+When issuing the build, you should provide this file using the `--secret` option, as in the following example:
 
 ```bash
-docker build -t ghcr.io/bwbohl/docker-edirom-online:mytag --secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN .
+--secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN
 ```
+
+Alternatively you can set the variable in your build environment’s shell, e.g.:
+
+```bash
+export GITHUB_API_TOKEN="ghp_your_token_here"
+```
+
+After doing so you can submit in your call to `build.sh` by adding:
+
+```bash
+--secret type=env,id=GITHUB_API_TOKEN 
+```
+
+> [!IMPORTANT]
+> This repo provides a `build.sh` to ensure proper building of the Dockerimage. This mostly is connected to a proper extraction of the versions of the contained Edirom packages. Using build.sh is just as using `docker build`, just call `./build.sh` instead and submit all the build arguments you would when building using `docker build` (except for the Dockerfile reference, e.g., `.`). The `build.sh` performs a two-step build, first building STAGE 1, then extracting the Edirom package versions, and finally building STAGE 1 and STAGE 2 for the final image (with set version numbers for the Dockerimage metadata). For example run:
+
+```bash
+./build.sh --secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN -t ghcr.io/baz-ga/docker-edirom-online:mytag
+```
+
 
 > [!IMPORTANT]
 > If you want to include additional XAR archives when building the image, place them in the `add-xars` directory next to the Docker file. These files will get copied by the *xar-fetcher* stage and handed to the *edirom-online* stage, which will place them in the eXist-db `autodeploy` directory!
