@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://expath.org/ns/pkg"
+         name="http://www.edirom.de/apps/EdiromOnlineConfig"
+         abbrev="edirom-online-config"
+         version="1.0.0"
+         spec="1.0">
+    <title>Edirom Online Config</title>
+    <dependency package="http://www.edirom.de/apps/EdiromOnlineBackend"/>
+</package>
