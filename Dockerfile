@@ -116,6 +116,12 @@ LABEL org.opencontainers.image.licenses="MIT"
 # copy XARs from xar-fetcher (STAGE 1)
 COPY --from=xar-fetcher /tmp/add-xars/*.xar ${EXIST_HOME}/autodeploy/
 
+# build config-deployer XAR and add to autodeploy
+COPY config-deployer/ /tmp/config-deployer/
+RUN cd /tmp/config-deployer \
+    && zip -r "${EXIST_HOME}/autodeploy/edirom-online-config.xar" . \
+    && rm -rf /tmp/config-deployer
+
 # copy edirom-entrypoint.sh
 COPY edirom-entrypoint.sh ${EXIST_HOME}/
 
