@@ -109,6 +109,12 @@ COPY --from=local-frontend-builder /opt/eo-frontend/build-xar/*.xar ${EXIST_HOME
 COPY add-xars/ /tmp/add-xars/
 RUN find /tmp/add-xars -maxdepth 1 -name "*.xar" -exec cp {} "${EXIST_HOME}/autodeploy/" \;
 
+# build config-deployer XAR and add to autodeploy
+COPY config-deployer/ /tmp/config-deployer/
+RUN cd /tmp/config-deployer \
+    && zip -r "${EXIST_HOME}/autodeploy/edirom-online-config.xar" . \
+    && rm -rf /tmp/config-deployer
+
 # copy edirom-entrypoint.sh
 COPY edirom-entrypoint.sh ${EXIST_HOME}/
 
