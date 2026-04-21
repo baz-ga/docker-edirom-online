@@ -45,9 +45,6 @@ ARG SENCH_BUILD_ENVIRONMENT
 # STAGE 1a: Build backend XAR from local source
 FROM bwbohl/sencha-cmd:2.1.0 AS local-backend-builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends ant \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /opt/eo-backend
 
 COPY --from=backend . .
@@ -62,9 +59,6 @@ ARG BE_PORT
 ARG BE_HOST
 
 ENV SENCHA_BUILD_ENVIRONMENT=${SENCHA_BUILD_ENVIRONMENT:-production}
-
-RUN apt-get update && apt-get install -y --no-install-recommends ant \
-    && rm -rf /var/lib/apt/lists/*
 
 # Ensure Sencha Cmd is on PATH (may already be set in base image)
 ENV PATH="/opt/Sencha/Cmd:${PATH}"
