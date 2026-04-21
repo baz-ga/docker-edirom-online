@@ -70,7 +70,7 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     # This file will be copied to the next stage.
 
 # STAGE 1b: Build edirom config-deployer
-FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
+# FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
 
 WORKDIR /opt
 
