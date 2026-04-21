@@ -6,4 +6,5 @@
          spec="1.0">
     <title>Edirom Online Config</title>
     <dependency package="http://www.edirom.de/apps/EdiromOnlineBackend"/>
+    <dependency package="http://www.edirom.de/apps/EdiromOnlineFrontend"/>
 </package>
