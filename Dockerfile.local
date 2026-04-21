@@ -29,6 +29,9 @@
 #              (default: 8080)
 #   BE_HOST    Backend host injected into the frontend's local.properties
 #              (default: localhost)
+#   SENCHA_BUILD_ENVIORNMENT    [production|testing|native|package] defaults to
+#                               production for more details see:
+# https://docs.sencha.com/cmd/guides/advanced_cmd/cmd_reference.html#advanced_cmd-_-cmd_reference_-_sencha_app_build
 # -----------------------------------------------------------------------------
 
 # setup build arguments
@@ -36,6 +39,7 @@ ARG BE_PORT=8080
 ARG BE_HOST=localhost
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 ARG EXIST_DEFAULT_APP_PATH
+ARG SENCH_BUILD_ENVIRONMENT
 
 
 # STAGE 1a: Build backend XAR from local source
@@ -57,6 +61,8 @@ FROM bwbohl/sencha-cmd:2.1.0 AS local-frontend-builder
 ARG BE_PORT
 ARG BE_HOST
 
+ENV SENCHA_BUILD_ENVIRONMENT=${SENCHA_BUILD_ENVIRONMENT:-production}
+
 RUN apt-get update && apt-get install -y --no-install-recommends ant \
     && rm -rf /var/lib/apt/lists/*
 
@@ -77,7 +83,7 @@ RUN touch local.properties \
          sed -i '/^backend\.port=/d' local.properties; \
          echo "backend.port=${BE_PORT}" >> local.properties; \
        fi \
-    && ./build.sh
+    && sencha app build ${SENCHA_BUILD_ENVIRONMENT}
 
 
 # STAGE 2: Deploy to eXist-db
