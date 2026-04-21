@@ -92,6 +92,19 @@ echo "Preparing to build the final EDIROM Online Docker image..."
 # Add EDIROM_COMMIT as build-arg
 DOCKER_BUILD_ARGS+=("--build-arg" "EDIROM_COMMIT=$EDIROM_COMMIT")
 
+# Default to --load if neither --load nor --push was specified
+has_output=0
+for arg in "${DOCKER_BUILD_ARGS[@]}"; do
+    if [[ "$arg" == "--load" ]] || [[ "$arg" == "--push" ]]; then
+        has_output=1
+        break
+    fi
+done
+if [[ $has_output -eq 0 ]]; then
+    echo "No --load or --push specified; defaulting to --load for the final image."
+    DOCKER_BUILD_ARGS+=("--load")
+fi
+
 # echo build args for second stage
 echo "Final build arguments:"
 for arg in "${DOCKER_BUILD_ARGS[@]}"; do
