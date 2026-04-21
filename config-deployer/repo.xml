@@ -3,5 +3,6 @@
     <description>Deploys runtime config.json to Edirom Online Frontend</description>
     <type>application</type>
     <target>edirom-online-config</target>
-    <post-install>post-install.xql</post-install>
+    <!--<permissions user="admin" group="dba" mode="0775"/>-->
+    <finish>post-install.xql</finish>
 </meta>
