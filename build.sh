@@ -75,10 +75,11 @@ docker buildx build --target xar-fetcher --load -t temp-xar-fetcher "${XAR_FETCH
 # We will copy it to the host and then remove the temporary container
 echo ""
 echo "Extracting EDIROM_COMMIT from build_env file for use in final stage..."
+docker rm -f temp-xar-fetcher-container 2>/dev/null || true
 docker create --name temp-xar-fetcher-container temp-xar-fetcher
 docker cp temp-xar-fetcher-container:/tmp/build_env ./build_env
 docker rm temp-xar-fetcher-container
-docker image rm temp-xar-fetcher
+docker image rm -f temp-xar-fetcher
 
 export EDIROM_COMMIT=$(cat ./build_env | cut -d'=' -f2)
 echo "Extracted EDIROM_COMMIT=$EDIROM_COMMIT"
