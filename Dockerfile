@@ -123,7 +123,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 # copy XARs from xar-fetcher (STAGE 1)
 COPY --from=xar-fetcher /tmp/add-xars/*.xar ${EXIST_HOME}/autodeploy/
-COPY --from=local-config-deployer-builder /opt/config-deployer/*.xar ${EXIST_HOME}/autodeploy/
+COPY --from=config-deployer-builder /opt/config-deployer/*.xar ${EXIST_HOME}/autodeploy/
 
 # copy edirom-entrypoint.sh
 COPY edirom-entrypoint.sh ${EXIST_HOME}/
