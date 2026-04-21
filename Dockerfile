@@ -18,7 +18,7 @@ ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # build arguments for stadlerpeter/existdb
 ARG EXIST_DEFAULT_APP_PATH
 
-# STAGE 1
+# STAGE 1a
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
@@ -70,7 +70,8 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     # This file will be copied to the next stage.
 
 # STAGE 1b: Build edirom config-deployer
-# FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
+
+FROM bwbohl/sencha-cmd:2.1.0 AS config-deployer-builder
 
 WORKDIR /opt
 
