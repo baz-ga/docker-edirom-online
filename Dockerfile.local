@@ -86,6 +86,15 @@ RUN touch local.properties \
     && sencha app build ${SENCHA_BUILD_ENVIRONMENT}
 
 
+# STAGE 1c: Build edirom config-deployer
+FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
+
+WORKDIR /opt
+
+COPY config-deployer/ ./config-deployer/
+RUN cd config-deployer \
+    && ant
+
 # STAGE 2: Deploy to eXist-db
 FROM stadlerpeter/existdb:6.4.0 AS edirom-online
 
@@ -94,7 +103,7 @@ ARG EXIST_DEFAULT_APP_PATH
 
 ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
 
-ENV EXIST_DEFAULT_APP_PATH=${EXIST_DEFAULT_APP_PATH:-xmldb:exist:///db/apps/Edirom-Online}
+ENV EXIST_DEFAULT_APP_PATH=${EXIST_DEFAULT_APP_PATH:-xmldb:exist:///db/apps/Edirom-Online-Frontend}
 ENV EXIST_CONTEXT_PATH=/
 ENV EXIST_ENV=development
 
@@ -110,16 +119,11 @@ LABEL org.opencontainers.image.licenses="MIT"
 # Copy XARs from builder stages
 COPY --from=local-backend-builder /opt/eo-backend/build-xar/*.xar ${EXIST_HOME}/autodeploy/
 COPY --from=local-frontend-builder /opt/eo-frontend/build-xar/*.xar ${EXIST_HOME}/autodeploy/
+COPY --from=local-config-deployer-builder /opt/config-deployer/*.xar ${EXIST_HOME}/autodeploy/
 
 # Copy any additional XARs from add-xars/ (e.g. edition data packages)
 COPY add-xars/ /tmp/add-xars/
 RUN find /tmp/add-xars -maxdepth 1 -name "*.xar" -exec cp {} "${EXIST_HOME}/autodeploy/" \;
-
-# build config-deployer XAR and add to autodeploy
-COPY config-deployer/ /tmp/config-deployer/
-RUN cd /tmp/config-deployer \
-    && zip -r "${EXIST_HOME}/autodeploy/edirom-online-config.xar" . \
-    && rm -rf /tmp/config-deployer
 
 # copy edirom-entrypoint.sh
 COPY edirom-entrypoint.sh ${EXIST_HOME}/
