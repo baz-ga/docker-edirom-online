@@ -10,6 +10,15 @@ echo
 
 # Validate settings.
 
+# Check for --commit-only flag
+COMMIT_ONLY=0
+if [[ "${1:-}" == "--commit-only" ]]; then
+    COMMIT_ONLY=1
+    shift
+    echo "Running in --commit-only mode: resolving commit SHA without downloading XARs."
+    echo
+fi
+
 # check if $GITHUB_API_TOKEN is set
 # If it is not set, try to load it from ~/.secrets if it exists.
 if [ -z "${GITHUB_API_TOKEN:-}" ]; then
@@ -29,7 +38,7 @@ fi
 # Ensure GITHUB_API_TOKEN is defined.
 [ -z "${GITHUB_API_TOKEN:-}" ] && { echo "Error: GITHUB_API_TOKEN variable is not defined. Please set it." >&2; exit 1; }
 # Validate number of arguments.
-[ $# -ne 4 ] && { echo "Usage: $0 [owner] [main_repo_name] [edirom_version_strategy] [target_ref]" >&2; exit 1; }
+[ $# -ne 4 ] && { echo "Usage: $0 [--commit-only] [owner] [main_repo_name] [edirom_version_strategy] [target_ref]" >&2; exit 1; }
 # Enable trace mode if TRACE variable is set to a non-empty string.
 # Using ${TRACE:-} to avoid "unbound variable" error when `set -u` is active.
 [ "${TRACE:-}" ] && set -x
@@ -62,6 +71,94 @@ elif [[ ! -x "$REF_CHECKER_SCRIPT" ]]; then
     echo "Error: gh-ref-type-checker script is not executable at $REF_CHECKER_SCRIPT" >&2
     exit 1
 fi
+
+# Resolve the commit SHA for a given owner/repo/ref without downloading or building anything.
+# Writes EDIROM_COMMIT=<sha> to /tmp/build_env.
+RESOLVE_COMMIT() {
+    local owner="$1"
+    local repo="$2"
+    local ref="$3"
+
+    local GH_API="https://api.github.com"
+    local GH_REPO="$GH_API/repos/$owner/$repo"
+    local FORMAT="Accept: application/vnd.github+json"
+    local AUTH="Authorization: Bearer $GITHUB_API_TOKEN"
+    local API_VERSION="X-GitHub-Api-Version: 2022-11-28"
+
+    echo "-> Resolving commit SHA for $owner/$repo @ $ref"
+    local ref_code=0
+    "$REF_CHECKER_SCRIPT" "$owner" "$repo" "$ref" || ref_code=$?
+    echo "gh-ref-type-checker returned code: $ref_code"
+
+    local release_or_branch=""
+    case $ref_code in
+        0) release_or_branch="release" ;;
+        1) release_or_branch="branch" ;;
+        2) echo "Error: Reference '$ref' not found in '$owner/$repo'." >&2; exit 1 ;;
+        3) echo "Error: API error while checking '$owner/$repo'." >&2; exit 1 ;;
+        *) echo "Error: Unknown exit code ($ref_code) from gh-ref-type-checker." >&2; exit 1 ;;
+    esac
+
+    if [[ "$release_or_branch" == "branch" ]]; then
+        echo "Resolving commit SHA from branch '$ref' via shallow clone..."
+        local temp_dir
+        temp_dir=$(mktemp -d -t commit_resolve_XXXXXX)
+        local repo_path="$temp_dir/$repo"
+        git clone --depth 1 -b "$ref" --single-branch \
+            "https://github.com/$owner/$repo.git" "$repo_path" \
+            || { echo "Error: Failed to clone $owner/$repo branch $ref." >&2; rm -rf "$temp_dir"; exit 1; }
+        local commit_hash
+        commit_hash=$(git -C "$repo_path" rev-parse HEAD)
+        echo "Commit hash: $commit_hash"
+        echo "EDIROM_COMMIT=$commit_hash" > /tmp/build_env
+        rm -rf "$temp_dir"
+
+    elif [[ "$release_or_branch" == "release" ]]; then
+        echo "Resolving commit SHA from release '$ref' via GitHub API..."
+        local release_api_url="$GH_REPO/releases/tags/$ref"
+        if [ "$ref" = "release-latest" ]; then
+            release_api_url="$GH_REPO/releases/latest"
+        fi
+        local release_response
+        release_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$release_api_url")
+
+        local tag_name
+        tag_name=$(echo "$release_response" | grep -oP '"tag_name": "\K[^"]+')
+        if [[ -z "$tag_name" ]]; then
+            echo "Warning: Could not extract tag_name from release response." >&2
+        fi
+
+        local tag_ref_url="$GH_API/repos/$owner/$repo/git/ref/tags/$tag_name"
+        local tag_ref_response
+        tag_ref_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$tag_ref_url")
+        local tag_object_url
+        tag_object_url=$(echo "$tag_ref_response" | grep -oP '"url": "\K[^"]+' | head -1)
+
+        local tag_object_response
+        tag_object_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$tag_object_url")
+        local tag_type
+        tag_type=$(echo "$tag_object_response" | grep -oP '"type": "\K[^"]+')
+        local commit_sha=""
+        if [[ "$tag_type" == "commit" ]]; then
+            commit_sha=$(echo "$tag_object_response" | grep -oP '"sha": "\K[^"]+' | head -1)
+        elif [[ "$tag_type" == "tag" ]]; then
+            local annotated_commit_url
+            annotated_commit_url=$(echo "$tag_object_response" | grep -oP '"object": {[^}]*"url": "\K[^"]+')
+            local annotated_commit_response
+            annotated_commit_response=$(curl -s -L -H "$FORMAT" -H "$AUTH" -H "$API_VERSION" "$annotated_commit_url")
+            commit_sha=$(echo "$annotated_commit_response" | grep -oP '"sha": "\K[^"]+')
+        fi
+
+        if [[ -n "$commit_sha" ]]; then
+            echo "Setting EDIROM_COMMIT to $commit_sha (from release tag $tag_name)."
+            echo "EDIROM_COMMIT=$commit_sha" > /tmp/build_env
+        else
+            echo "Warning: Could not extract commit SHA from release tag '$tag_name'." >&2
+        fi
+    fi
+
+    echo "Commit resolution completed for $owner/$repo at reference $ref."
+}
 
 # Define a function for fetching a release asset or checking out the github repository and build it.
 # This function will be used to fetch xar files from the Edirom-Online repository.
@@ -267,26 +364,38 @@ if [[ "$EDIROM_VERSION_STRATEGY" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 
     if [[ "$EDIROM_VERSION_MAJOR" -ge 2 ]]; then
         echo "Edirom Edition version $EDIROM_VERSION_STRATEGY is >= 2.0.0."
-        echo "Fetching XAR files from Edirom-Online-Frontend and Edirom-Online-Backend repositories."
+        if [[ $COMMIT_ONLY -eq 1 ]]; then
+            echo "Resolving commit SHA from Edirom-Online-Backend repository."
+            RESOLVE_COMMIT "$EDIROM_OWNER" Edirom-Online-Backend "$EDIROM_REF" \
+                || { echo "Error: Failed to resolve Edirom-Online-Backend commit." >&2; exit 1; }
+        else
+            echo "Fetching XAR files from Edirom-Online-Frontend and Edirom-Online-Backend repositories."
 
-        # Fetch xar files from Edirom-Online-Backend repository.
-        GET_XAR "$EDIROM_OWNER" Edirom-Online-Backend "$EDIROM_REF" "*.xar" \
-            || { echo "Error: Failed to fetch Edirom-Online-Backend XAR files." >&2; exit 1; }
-        echo "Edirom-Online-Backend XAR file fetched successfully."
-        echo
+            # Fetch xar files from Edirom-Online-Backend repository.
+            GET_XAR "$EDIROM_OWNER" Edirom-Online-Backend "$EDIROM_REF" "*.xar" \
+                || { echo "Error: Failed to fetch Edirom-Online-Backend XAR files." >&2; exit 1; }
+            echo "Edirom-Online-Backend XAR file fetched successfully."
+            echo
 
-        # Fetch xar files from Edirom-Online-Frontend repository.
-        GET_XAR "$EDIROM_OWNER" Edirom-Online-Frontend "$EDIROM_REF" "*.xar" \
-            || { echo "Error: Failed to fetch Edirom-Online-Frontend XAR files." >&2; exit 1; }
-        echo "Edirom-Online-Frontend XAR file fetched successfully."
-        echo
+            # Fetch xar files from Edirom-Online-Frontend repository.
+            GET_XAR "$EDIROM_OWNER" Edirom-Online-Frontend "$EDIROM_REF" "*.xar" \
+                || { echo "Error: Failed to fetch Edirom-Online-Frontend XAR files." >&2; exit 1; }
+            echo "Edirom-Online-Frontend XAR file fetched successfully."
+            echo
+        fi
     else # EDIROM_VERSION_STRATEGY is a version number and less than 2.0.0.
         echo "Edirom Edition version $EDIROM_VERSION_STRATEGY is less than 2.0.0."
-        echo "Fetching XAR file from Edirom-Online repository."
-        GET_XAR "$EDIROM_OWNER" Edirom-Online "$EDIROM_REF" "*.xar" \
-            || { echo "Error: Failed to fetch Edirom-Online XAR files." >&2; exit 1; }
-        echo "Edirom-Online XAR file fetched successfully."
-        echo
+        if [[ $COMMIT_ONLY -eq 1 ]]; then
+            echo "Resolving commit SHA from Edirom-Online repository."
+            RESOLVE_COMMIT "$EDIROM_OWNER" Edirom-Online "$EDIROM_REF" \
+                || { echo "Error: Failed to resolve Edirom-Online commit." >&2; exit 1; }
+        else
+            echo "Fetching XAR file from Edirom-Online repository."
+            GET_XAR "$EDIROM_OWNER" Edirom-Online "$EDIROM_REF" "*.xar" \
+                || { echo "Error: Failed to fetch Edirom-Online XAR files." >&2; exit 1; }
+            echo "Edirom-Online XAR file fetched successfully."
+            echo
+        fi
     fi
 else
     echo "Error: EDIROM_VERSION_STRATEGY '$EDIROM_VERSION_STRATEGY' is not a valid version number (e.g., 1.0.0). Please provide a valid version number." >&2
