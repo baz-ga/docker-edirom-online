@@ -1,0 +1,129 @@
+# syntax=docker/dockerfile:1.4
+# -----------------------------------------------------------------------------
+# This file is part of <https://github.com/baz-ga/docker-edirom-online>
+# Version: 1.0.0
+# Date: 2026-03-10
+# Authors: Benjamin W. Bohl <https://github.com/bwbohl>
+# Publisher: Bernd Alois Zimmermann-Gesamtausgabe <https://github.com/baz-ga>
+# License: MIT
+# DOI: []
+# -----------------------------------------------------------------------------
+#
+# -----------------------------------------------------------------------------
+# docker-edirom-online (local source build)
+# -----------------------------------------------------------------------------
+# Builds Edirom Online XAR files from local source repositories using Docker
+# BuildKit named build contexts. No GitHub access or API token required.
+#
+# Usage:
+#   docker build -f Dockerfile.local \
+#     --build-context backend=/path/to/Edirom-Online-Backend \
+#     --build-context frontend=/path/to/Edirom-Online-Frontend \
+#     [-t edirom-online:local] \
+#     [--build-arg BE_PORT=8080] \
+#     [--build-arg BE_HOST=localhost] \
+#     .
+#
+# Optional build arguments:
+#   BE_PORT    Backend port injected into the frontend's local.properties
+#              (default: 8080)
+#   BE_HOST    Backend host injected into the frontend's local.properties
+#              (default: localhost)
+#   SENCHA_BUILD_ENVIORNMENT    [production|testing|native|package] defaults to
+#                               production for more details see:
+# https://docs.sencha.com/cmd/guides/advanced_cmd/cmd_reference.html#advanced_cmd-_-cmd_reference_-_sencha_app_build
+# -----------------------------------------------------------------------------
+
+# setup build arguments
+ARG BE_PORT=8080
+ARG BE_HOST=localhost
+ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ARG EXIST_DEFAULT_APP_PATH
+ARG SENCH_BUILD_ENVIRONMENT
+
+
+# STAGE 1a: Build backend XAR from local source
+FROM bwbohl/sencha-cmd:2.1.0 AS local-backend-builder
+
+WORKDIR /opt/eo-backend
+
+COPY --from=backend . .
+
+RUN ant
+
+
+# STAGE 1b: Build frontend XAR from local source
+FROM bwbohl/sencha-cmd:2.1.0 AS local-frontend-builder
+
+ARG BE_PORT
+ARG BE_HOST
+
+ENV SENCHA_BUILD_ENVIRONMENT=${SENCHA_BUILD_ENVIRONMENT:-production}
+
+# Ensure Sencha Cmd is on PATH (may already be set in base image)
+ENV PATH="/opt/Sencha/Cmd:${PATH}"
+
+WORKDIR /opt/eo-frontend
+
+COPY --from=frontend . .
+
+# Inject backend connection properties before building
+RUN touch local.properties \
+    && if [ -n "${BE_HOST}" ] && [ "${BE_HOST}" != "localhost" ]; then \
+         sed -i '/^backend\.host=/d' local.properties; \
+         echo "backend.host=${BE_HOST}" >> local.properties; \
+       fi \
+    && if [ -n "${BE_PORT}" ] && [ "${BE_PORT}" != "8080" ]; then \
+         sed -i '/^backend\.port=/d' local.properties; \
+         echo "backend.port=${BE_PORT}" >> local.properties; \
+       fi \
+    && sencha app build ${SENCHA_BUILD_ENVIRONMENT}
+
+
+# STAGE 1c: Build edirom config-deployer
+FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
+
+WORKDIR /opt
+
+COPY config-deployer/ ./config-deployer/
+RUN cd config-deployer \
+    && ant
+
+# STAGE 2: Deploy to eXist-db
+FROM stadlerpeter/existdb:6.4.0 AS edirom-online
+
+ARG BUILD_DATE
+ARG EXIST_DEFAULT_APP_PATH
+
+ENV BUILD_DATE=${BUILD_DATE:-1970-01-01T00:00:00Z}
+
+ENV EXIST_DEFAULT_APP_PATH=${EXIST_DEFAULT_APP_PATH:-xmldb:exist:///db/apps/Edirom-Online-Frontend}
+ENV EXIST_CONTEXT_PATH=/
+ENV EXIST_ENV=development
+
+# LABEL about this image
+LABEL org.opencontainers.image.title="Docker Edirom Online (local build)"
+LABEL org.opencontainers.image.description="Edirom Online built from local source repositories, running on eXist-db."
+LABEL org.opencontainers.image.documentation="https://github.com/baz-ga/docker-edirom-online"
+LABEL org.opencontainers.image.url="https://github.com/baz-ga/docker-edirom-online"
+LABEL org.opencontainers.image.created=$BUILD_DATE
+LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Copy XARs from builder stages
+COPY --from=local-backend-builder /opt/eo-backend/build-xar/*.xar ${EXIST_HOME}/autodeploy/
+COPY --from=local-frontend-builder /opt/eo-frontend/build-xar/*.xar ${EXIST_HOME}/autodeploy/
+COPY --from=local-config-deployer-builder /opt/config-deployer/*.xar ${EXIST_HOME}/autodeploy/
+
+# Copy any additional XARs from add-xars/ (e.g. edition data packages)
+COPY add-xars/ /tmp/add-xars/
+RUN find /tmp/add-xars -maxdepth 1 -name "*.xar" -exec cp {} "${EXIST_HOME}/autodeploy/" \;
+
+# copy edirom-entrypoint.sh
+COPY edirom-entrypoint.sh ${EXIST_HOME}/
+
+# on run execute entrypoint
+CMD ["./edirom-entrypoint.sh"]
+
+# expose default port
+EXPOSE 8080
