@@ -93,7 +93,17 @@ jobs:
           #  ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKERHUB_IMAGE_NAME }}
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-            latest=${{ github.ref == 'refs/heads/main' }}
+            latest=auto
+          # on push output branch name as tag
+          # on tag output git-tag-name as dockerimage-tag, e.g.: v1.2.3
+          # on tag output v+major.minor dockerimage tag, e.g.: v1.2
+          # on tag output major version at dockerimage-tag, e.g.: v1
+          tags: |
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{raw}}
+            type=semver,prefix=v,pattern={{major}}.{{minor}}
+            type=semver,prefix=v,pattern={{major}}
       # Build Docker image using build.sh script
       - name: Build Docker image
         id: build-image
