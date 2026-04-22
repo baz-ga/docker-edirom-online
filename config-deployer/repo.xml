@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <description>Deploys runtime config.json to Edirom Online Frontend</description>
+    <type>application</type>
+    <target>edirom-online-config</target>
+    <!--<permissions user="admin" group="dba" mode="0775"/>-->
+    <finish>post-install.xql</finish>
+</meta>

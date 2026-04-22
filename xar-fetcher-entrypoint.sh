@@ -35,6 +35,10 @@ fi
 [ "${TRACE:-}" ] && set -x
 
 
+# Initialise build_env with a fallback so the file always exists even if
+# commit SHA extraction fails later.
+echo "EDIROM_COMMIT=unknown" > /tmp/build_env
+
 EDIROM_OWNER=$1
 EDIROM_REPO=$2 # This is the main repository name, e.g., Edirom-Online
 EDIROM_VERSION_STRATEGY=$3 # This is the version strategy, e.g., 2.0.0
@@ -173,7 +177,7 @@ GET_XAR() {
         # Set the EDIROM_COMMIT environment variable for the Docker build.
         if [[ -n "$commit_hash" ]]; then
             echo "Setting EDIROM_COMMIT to $commit_hash (from branch $ref)."
-            echo "EDIROM_COMMIT=$commit_hash" >> /tmp/build_env
+            echo "EDIROM_COMMIT=$commit_hash" > /tmp/build_env
         fi
 
         # The trap command will handle cleaning up $temp_dir on exit.
@@ -222,7 +226,7 @@ GET_XAR() {
 
             if [[ -n "$commit_sha" ]]; then
                 echo "Setting EDIROM_COMMIT to $commit_sha (from release tag $tag_name)."
-                echo "EDIROM_COMMIT=$commit_sha" >> /tmp/build_env
+                echo "EDIROM_COMMIT=$commit_sha" > /tmp/build_env
             else
                 echo "Warning: Could not extract commit SHA from release tag '$tag_name'. EDIROM_COMMIT may not be accurate." >&2
             fi

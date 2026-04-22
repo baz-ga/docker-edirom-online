@@ -18,7 +18,7 @@ ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # build arguments for stadlerpeter/existdb
 ARG EXIST_DEFAULT_APP_PATH
 
-# STAGE 1
+# STAGE 1a
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
@@ -63,12 +63,21 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     /bin/bash /opt/xar-fetcher-entrypoint.sh "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF" \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
-    
+
     #/bin/bash -c "echo \$GITHUB_API_TOKEN \$EDIROM_OWNER Edirom-Online \$EDIROM_VERSION_STRATEGY \$EDIROM_REF"
 
     # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
     # This file will be copied to the next stage.
 
+# STAGE 1b: Build edirom config-deployer
+
+FROM bwbohl/sencha-cmd:2.1.0 AS config-deployer-builder
+
+WORKDIR /opt
+
+COPY config-deployer/ ./config-deployer/
+RUN cd config-deployer \
+    && ant
 
 # STAGE 2
 FROM stadlerpeter/existdb:6.4.0 AS edirom-online
@@ -115,6 +124,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 # copy XARs from xar-fetcher (STAGE 1)
 COPY --from=xar-fetcher /tmp/add-xars/*.xar ${EXIST_HOME}/autodeploy/
+COPY --from=config-deployer-builder /opt/config-deployer/*.xar ${EXIST_HOME}/autodeploy/
 
 # copy edirom-entrypoint.sh
 COPY edirom-entrypoint.sh ${EXIST_HOME}/

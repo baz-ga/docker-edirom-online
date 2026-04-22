@@ -75,10 +75,11 @@ docker buildx build --target xar-fetcher --load -t temp-xar-fetcher "${XAR_FETCH
 # We will copy it to the host and then remove the temporary container
 echo ""
 echo "Extracting EDIROM_COMMIT from build_env file for use in final stage..."
+docker rm -f temp-xar-fetcher-container 2>/dev/null || true
 docker create --name temp-xar-fetcher-container temp-xar-fetcher
 docker cp temp-xar-fetcher-container:/tmp/build_env ./build_env
 docker rm temp-xar-fetcher-container
-docker image rm temp-xar-fetcher
+docker image rm -f temp-xar-fetcher
 
 export EDIROM_COMMIT=$(cat ./build_env | cut -d'=' -f2)
 echo "Extracted EDIROM_COMMIT=$EDIROM_COMMIT"
@@ -91,6 +92,35 @@ echo "Preparing to build the final EDIROM Online Docker image..."
 
 # Add EDIROM_COMMIT as build-arg
 DOCKER_BUILD_ARGS+=("--build-arg" "EDIROM_COMMIT=$EDIROM_COMMIT")
+
+# Default to --load (single-platform) or --push (multi-platform) if neither was specified
+has_output=0
+is_multiplatform=0
+skip_next=0
+for arg in "${DOCKER_BUILD_ARGS[@]}"; do
+    if [[ $skip_next -eq 1 ]]; then
+        if [[ "$arg" == *,* ]]; then
+            is_multiplatform=1
+        fi
+        skip_next=0
+        continue
+    fi
+    if [[ "$arg" == "--load" ]] || [[ "$arg" == "--push" ]]; then
+        has_output=1
+    fi
+    if [[ "$arg" == "--platform" ]]; then
+        skip_next=1
+    fi
+done
+if [[ $has_output -eq 0 ]]; then
+    if [[ $is_multiplatform -eq 1 ]]; then
+        echo "Multi-platform build detected; defaulting to --push for the final image."
+        DOCKER_BUILD_ARGS+=("--push")
+    else
+        echo "No --load or --push specified; defaulting to --load for the final image."
+        DOCKER_BUILD_ARGS+=("--load")
+    fi
+fi
 
 # echo build args for second stage
 echo "Final build arguments:"

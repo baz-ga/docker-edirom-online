@@ -1,0 +1,13 @@
+<project name="edirom-confi-deployer" default="dist">
+
+    <target name="dist">
+        <zip destfile="edirom-config-deployer.xar">
+            <filelist>
+                <file name="expath-pkg.xml"/>
+                <file name="post-install.xql"/>
+                <file name="repo.xml"/>
+            </filelist>
+        </zip>
+    </target>
+
+</project>
