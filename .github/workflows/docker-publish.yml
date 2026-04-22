@@ -102,8 +102,8 @@ jobs:
             type=ref,event=pr
             type=ref,event=branch
             type=semver,pattern={{raw}}
-            type=semver,prefix=v,pattern={{major}}.{{minor}}
-            type=semver,prefix=v,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
       # Build Docker image using build.sh script
       - name: Build Docker image
         id: build-image
