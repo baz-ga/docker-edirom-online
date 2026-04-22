@@ -18,7 +18,44 @@ ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # build arguments for stadlerpeter/existdb
 ARG EXIST_DEFAULT_APP_PATH
 
-# STAGE 1a
+# STAGE 1a: Resolve Edirom commit SHA only (no XAR download)
+FROM bwbohl/sencha-cmd:2.1.0 AS commit-resolver
+
+# setup build arguments
+ARG EDIROM_VERSION_STRATEGY
+ARG EDIROM_OWNER
+ARG EDIROM_REF
+
+ARG BUILD_DATE
+
+# setup environment variables
+ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
+ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
+ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
+
+# Add Sencha Cmd to PATH
+ENV PATH="/opt/Sencha/Cmd:${PATH}"
+
+# copy gh-asset-downloader and entrypoint to commit-resolver
+COPY gitmodules/gh-asset-downloader /opt/gh-asset-downloader
+COPY xar-fetcher-entrypoint.sh /opt/xar-fetcher-entrypoint.sh
+
+# add requirements to baseimage
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ --no-install-suggests \
+ bash curl libxml2-utils git
+
+## switch workdir
+WORKDIR /opt
+
+## resolve commit SHA only — no XAR download, no build
+RUN --mount=type=secret,id=GITHUB_API_TOKEN \
+    export GITHUB_API_TOKEN=$(cat /run/secrets/GITHUB_API_TOKEN) && \
+    echo "Token length: ${#GITHUB_API_TOKEN}" && \
+    /bin/bash /opt/xar-fetcher-entrypoint.sh --commit-only \
+      "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF"
+
+# STAGE 1b
 FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 
 # setup build arguments
@@ -69,7 +106,7 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
     # This file will be copied to the next stage.
 
-# STAGE 1b: Build edirom config-deployer
+# STAGE 1c: Build edirom config-deployer
 
 FROM bwbohl/sencha-cmd:2.1.0 AS config-deployer-builder
 
