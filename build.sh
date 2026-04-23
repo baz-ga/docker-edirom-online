@@ -11,94 +11,99 @@ echo ""
 # Collect all arguments to pass to docker build
 DOCKER_BUILD_ARGS=("$@")
 
-# echo build args, splitting by spaces
 echo "Building EDIROM Online Docker image with the following arguments:"
 for arg in "${DOCKER_BUILD_ARGS[@]}"; do
     echo "  - $arg"
 done
 echo ""
 
-# prepare docker args for first build stage, rmoving -t  and the following string if present
-# This is to ensure we don't tag the intermediate stage with the final image name
-# as it is not needed and can cause issues with the build process.
-# Remove -t and its value from DOCKER_BUILD_ARGS
-COMMIT_RESOLVER_ARGS=()
-skip_next=0
+# Parse DOCKER_BUILD_ARGS to extract values needed on the host before the Docker build.
+EDIROM_VERSION_STRATEGY_VAL="1.0.0"
+EDIROM_OWNER_VAL="Edirom"
+EDIROM_REF_VAL=""
+
+next_is_build_arg=0
+next_is_secret=0
 for arg in "${DOCKER_BUILD_ARGS[@]}"; do
-    if [[ $skip_next -eq 1 ]]; then
-        skip_next=0
-        continue
-    fi
-    #if --build-arg EDIROM_VERSION_STRATEGY=2.0.0 then add another --build-arg EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online-Frontend
-    if [[ "$arg" == EDIROM_VERSION_STRATEGY=* ]]; then
-        COMMIT_RESOLVER_ARGS+=("$arg")
-        # Extract the version strategy
-        version_strategy=$(echo "$arg" | cut -d'=' -f2)
-        # Add the EXIST_DEFAULT_APP_PATH argument based on the version strategy
-        if [[ "$version_strategy" == "2.0.0" ]]; then
-            COMMIT_RESOLVER_ARGS+=("--build-arg" "EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online-Frontend")
-        else
-            COMMIT_RESOLVER_ARGS+=("--build-arg" "EXIST_DEFAULT_APP_PATH=xmldb:exist:///db/apps/Edirom-Online")
+    if [[ $next_is_build_arg -eq 1 ]]; then
+        next_is_build_arg=0
+        if [[ "$arg" == EDIROM_VERSION_STRATEGY=* ]]; then
+            EDIROM_VERSION_STRATEGY_VAL="${arg#EDIROM_VERSION_STRATEGY=}"
+        elif [[ "$arg" == EDIROM_OWNER=* ]]; then
+            EDIROM_OWNER_VAL="${arg#EDIROM_OWNER=}"
+        elif [[ "$arg" == EDIROM_REF=* ]]; then
+            EDIROM_REF_VAL="${arg#EDIROM_REF=}"
         fi
-        skip_next=0
         continue
     fi
-    # Skip the -t or --tag argument and the next value
-    if [[ "$arg" == "-t" ]] || [[ "$arg" == --tag ]]; then
-        skip_next=1
+    if [[ $next_is_secret -eq 1 ]]; then
+        next_is_secret=0
+        if [[ "$arg" == *id=GITHUB_API_TOKEN* ]]; then
+            secret_src=$(echo "$arg" | sed 's/.*src=\([^,]*\).*/\1/')
+            [[ -f "$secret_src" ]] && export GITHUB_API_TOKEN=$(cat "$secret_src")
+        fi
         continue
     fi
-    # Skip --push and --load flags (no value follows)
-    if [[ "$arg" == "--push" ]] || [[ "$arg" == "--load" ]]; then
-        continue
+    if [[ "$arg" == "--build-arg" ]]; then
+        next_is_build_arg=1
+    elif [[ "$arg" == "--secret" ]]; then
+        next_is_secret=1
+    elif [[ "$arg" == --secret=* ]]; then
+        secret_val="${arg#--secret=}"
+        if [[ "$secret_val" == *id=GITHUB_API_TOKEN* ]]; then
+            secret_src=$(echo "$secret_val" | sed 's/.*src=\([^,]*\).*/\1/')
+            [[ -f "$secret_src" ]] && export GITHUB_API_TOKEN=$(cat "$secret_src")
+        fi
     fi
-    # Skip --platform and its value
-    if [[ "$arg" == "--platform" ]]; then
-        skip_next=1
-        continue
-    fi
-    # Add the current argument to the list
-    COMMIT_RESOLVER_ARGS+=("$arg")
 done
 
-# 1. Build commit-resolver stage and export /tmp/build_env directly to the host filesystem
-echo "Building commit-resolver stage to resolve EDIROM commit SHA..."
-echo "Using these build arguments: ${COMMIT_RESOLVER_ARGS[*]}"
-docker buildx build --target commit-resolver --output type=local,dest=./build-output "${COMMIT_RESOLVER_ARGS[@]}" . \
-    && echo "commit-resolver stage completed successfully." \
-    || { echo "Error building commit-resolver stage."; exit 1; }
+[[ -z "$EDIROM_REF_VAL" ]] && EDIROM_REF_VAL="v$EDIROM_VERSION_STRATEGY_VAL"
 
+# Determine which repo to query and EXIST_DEFAULT_APP_PATH based on version strategy.
+version_major=$(echo "$EDIROM_VERSION_STRATEGY_VAL" | cut -d. -f1)
+if [[ "$version_major" -ge 2 ]]; then
+    COMMIT_REPO="Edirom-Online-Backend"
+    EXIST_DEFAULT_APP_PATH_VAL="xmldb:exist:///db/apps/Edirom-Online-Frontend"
+else
+    COMMIT_REPO="Edirom-Online"
+    EXIST_DEFAULT_APP_PATH_VAL="xmldb:exist:///db/apps/Edirom-Online"
+fi
+
+# Resolve EDIROM_COMMIT on the host directly — no Docker build stage needed.
+GH_VERSION_DESCRIPTOR="./gitmodules/gh-asset-downloader/gh-version-descriptor.sh"
+if [[ "$version_major" -ge 2 ]]; then
+    echo "Resolving EDIROM_COMMIT for $EDIROM_OWNER_VAL/Edirom-Online-Backend and Edirom-Online-Frontend @ $EDIROM_REF_VAL..."
+    COMMIT_BACKEND=$("$GH_VERSION_DESCRIPTOR" --with-repo "$EDIROM_OWNER_VAL" Edirom-Online-Backend "$EDIROM_REF_VAL") \
+        || { echo "Error: Failed to resolve Edirom-Online-Backend version descriptor."; exit 1; }
+    COMMIT_FRONTEND=$("$GH_VERSION_DESCRIPTOR" --with-repo "$EDIROM_OWNER_VAL" Edirom-Online-Frontend "$EDIROM_REF_VAL") \
+        || { echo "Error: Failed to resolve Edirom-Online-Frontend version descriptor."; exit 1; }
+    EDIROM_COMMIT="$COMMIT_BACKEND + $COMMIT_FRONTEND"
+else
+    echo "Resolving EDIROM_COMMIT for $EDIROM_OWNER_VAL/Edirom-Online @ $EDIROM_REF_VAL..."
+    EDIROM_COMMIT=$("$GH_VERSION_DESCRIPTOR" --with-repo "$EDIROM_OWNER_VAL" Edirom-Online "$EDIROM_REF_VAL") \
+        || { echo "Error: Failed to resolve EDIROM_COMMIT."; exit 1; }
+fi
+echo "EDIROM_COMMIT=$EDIROM_COMMIT"
 echo ""
-echo "Extracting EDIROM_COMMIT from build_env..."
-export EDIROM_COMMIT=$(cat ./build-output/tmp/build_env | cut -d'=' -f2)
-echo "Extracted EDIROM_COMMIT=$EDIROM_COMMIT"
-echo ""
-rm -rf ./build-output
 
-# 2. Build the final image, passing the commit as a build-arg and any secrets/args
-echo "Preparing to build the final EDIROM Online Docker image..."
-
-# Add EDIROM_COMMIT as build-arg
+# Add resolved values as build-args.
 DOCKER_BUILD_ARGS+=("--build-arg" "EDIROM_COMMIT=$EDIROM_COMMIT")
+DOCKER_BUILD_ARGS+=("--build-arg" "EXIST_DEFAULT_APP_PATH=$EXIST_DEFAULT_APP_PATH_VAL")
 
-# Default to --load (single-platform) or --push (multi-platform) if neither was specified
+# Default to --load (single-platform) or --push (multi-platform) if neither was specified.
 has_output=0
 is_multiplatform=0
 skip_next=0
 for arg in "${DOCKER_BUILD_ARGS[@]}"; do
     if [[ $skip_next -eq 1 ]]; then
-        if [[ "$arg" == *,* ]]; then
-            is_multiplatform=1
-        fi
+        [[ "$arg" == *,* ]] && is_multiplatform=1
         skip_next=0
         continue
     fi
     if [[ "$arg" == "--load" ]] || [[ "$arg" == "--push" ]]; then
         has_output=1
     fi
-    if [[ "$arg" == "--platform" ]]; then
-        skip_next=1
-    fi
+    [[ "$arg" == "--platform" ]] && skip_next=1
 done
 if [[ $has_output -eq 0 ]]; then
     if [[ $is_multiplatform -eq 1 ]]; then
@@ -110,15 +115,11 @@ if [[ $has_output -eq 0 ]]; then
     fi
 fi
 
-# echo build args for second stage
 echo "Final build arguments:"
 for arg in "${DOCKER_BUILD_ARGS[@]}"; do
     echo "  - $arg"
 done
 echo ""
 
-# Build the final image, passing the EDIROM_COMMIT as a build argument
-echo "Building final EDIROM Online Docker image with EDIROM_COMMIT=$EDIROM_COMMIT"
-echo "Using additional build arguments: ${DOCKER_BUILD_ARGS[*]}"
-# Build the final image, passing the EDIROM_COMMIT as a build argument
+echo "Building EDIROM Online Docker image with EDIROM_COMMIT=$EDIROM_COMMIT"
 docker buildx build "${DOCKER_BUILD_ARGS[@]}" .
