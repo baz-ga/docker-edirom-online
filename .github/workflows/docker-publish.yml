@@ -112,30 +112,28 @@ jobs:
         run: |
           chmod +x build.sh
 
-          # Extract first tag for the build
+          # Build --tag flags from all metadata-action tags
+          TAG_ARGS=()
+          while IFS= read -r tag; do
+            [[ -n "$tag" ]] && TAG_ARGS+=(--tag "$tag")
+          done <<< "${{ steps.meta.outputs.tags }}"
           FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
 
-          # Run build.sh with all necessary arguments
+          # Common build arguments
+          COMMON_ARGS=(
+            --secret type=env,id=GITHUB_API_TOKEN
+            --build-arg EDIROM_OWNER=baz-ga
+            --build-arg EDIROM_REF=bazga/candidate
+            --build-arg EDIROM_VERSION_STRATEGY=2.0.0
+            "${TAG_ARGS[@]}"
+          )
+
           # For PRs: build only for amd64 with --load
           # For non-PRs: build multi-platform with --push
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./build.sh \
-              --secret type=env,id=GITHUB_API_TOKEN \
-              --build-arg EDIROM_OWNER=baz-ga \
-              --build-arg EDIROM_REF=bazga/candidate \
-              --build-arg EDIROM_VERSION_STRATEGY=2.0.0 \
-              --platform linux/amd64 \
-              --tag "$FIRST_TAG" \
-              --load
+            ./build.sh "${COMMON_ARGS[@]}" --platform linux/amd64 --load
           else
-            ./build.sh \
-              --secret type=env,id=GITHUB_API_TOKEN \
-              --build-arg EDIROM_OWNER=baz-ga \
-              --build-arg EDIROM_REF=bazga/candidate \
-              --build-arg EDIROM_VERSION_STRATEGY=2.0.0 \
-              --platform linux/amd64,linux/arm64/v8 \
-              --tag "$FIRST_TAG" \
-              --push
+            ./build.sh "${COMMON_ARGS[@]}" --platform linux/amd64,linux/arm64/v8 --push
           fi
 
           # Get the image digest for signing
