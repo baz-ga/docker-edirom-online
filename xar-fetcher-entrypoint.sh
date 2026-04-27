@@ -151,7 +151,7 @@ GET_XAR() {
 
         # Clone the repository and checkout the specified branch into a subdirectory
         local repo_path="$temp_dir/$repo"
-        git clone -b "$ref" --single-branch "https://github.com/$owner/$repo.git" "$repo_path" \
+        git clone -b "$ref" --single-branch --recurse-submodules "https://github.com/$owner/$repo.git" "$repo_path" \
             || { echo "Error: Failed to clone repository '$owner/$repo' branch '$ref'." >&2; exit 1; }
 
         # Change to the cloned repository directory
