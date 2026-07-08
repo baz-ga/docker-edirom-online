@@ -101,6 +101,12 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
 
+RUN echo "Downloading dependencies..." && \
+    mkdir -p /opt/roaster && \
+    cd /opt/roaster && \
+    curl -L -O "https://exist-db.org/exist/apps/public-repo/public/roaster-${ROASTER_VERSION}.xar" && \
+    cp roaster-*.xar /tmp/add-xars/;
+    
     #/bin/bash -c "echo \$GITHUB_API_TOKEN \$EDIROM_OWNER Edirom-Online \$EDIROM_VERSION_STRATEGY \$EDIROM_REF"
 
     # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
