@@ -2,15 +2,29 @@
 
 A Docker image running on [eXist-db](https://www.exist-db.org/) with a predeployed [Edirom Online](https://github.com/Edirom/Edirom-Online), and options for deploying additional XAR archives on-build or on-run.
 
-This Docker image is a multi-stage Docker image and has the following stages:
+Two Dockerfiles are provided:
+
+* **`Dockerfile`** — fetches Edirom XARs from GitHub: downloads release assets when `EDIROM_REF` is a tag, or clones and builds from source when it is a branch. Requires a GitHub API token.
+* **`Dockerfile.local`** — builds backend and frontend XARs from local source repositories. No GitHub token required. Use this for local development.
+
+Both Dockerfiles share a common final stage (**edirom-online**) described below.
+
+### `Dockerfile` stages
 
 * STAGE 1: **xar-fetcher**
 
-  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
+  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. It also offers an option to inject local XAR archives in the image build (cf. [Building the Docker Image](#building-the-docker-image)).
 
 * STAGE 2: **edirom-online**
 
   The *edirom-online* stage is based on *stadlerpeter/existdb:6.4.0*, which runs an eXist database. *STAGE 2* copies XAR archives fetched by *STAGE 1* and places them into the `autodeploy` directory of the eXist database. Moreover, it provides a method for deploying additional XAR archives to the eXist database when running the Docker image for the first time (cf. [Running the Docker Image](#running-the-docker-image)).
+
+### `Dockerfile.local` stages
+
+* STAGE 1a: **local-backend-builder** — builds the backend XAR from local source using `ant`.
+* STAGE 1b: **local-frontend-builder** — builds the frontend XAR from local source using Sencha Cmd.
+* STAGE 1c: **local-config-deployer-builder** — builds a XAR tath automatically deploys a `config.json` to the installed _Edirom Online Frontend_.
+* STAGE 2: **edirom-online** — identical to the final stage of `Dockerfile`.
 
 ## Pulling the Docker Image
 
@@ -29,7 +43,7 @@ For available tags please visit: https://github.com/baz-ga/docker-edirom-online/
 > docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/baz-ga/docker-edirom-online
 > ```
 
-If you want to run the Docker image and start using eXist-db with an installed Edirom Online, e.g., run:
+If you want to run the Docker image and start using _eXist-db_ with an installed _Edirom Online_, e.g., run:
 
 ```bash
 docker run -p 8080:8080 ghcr.io/baz-ga/docker-edirom-online
@@ -56,7 +70,7 @@ This Docker image overrides the following environment variables if not set to ot
 
 * **EXIST_DEFAULT_APP_PATH**
 
-  Set to `xmldb:exist:///db/apps/Edirom-Online` to make Edirom Online the default app.
+  Set to `xmldb:exist:///db/apps/Edirom-Online` (for `EDIROM_VERSION_STRATEGY < 2.0.0`) or `xmldb:exist:///db/apps/Edirom-Online-Frontend` (for `>= 2.0.0`) to make Edirom Online the default app.
 
 * **EXIST_CONTEXT_PATH**
 
@@ -66,20 +80,51 @@ This Docker image overrides the following environment variables if not set to ot
 
   Set to `development`.
 
+* **BACKEND_URL**
+
+  The URL written to `config.json` as `backendURL` for the Edirom Online Frontend. Defaults to the backend's installation path as resolved from the eXist-db package registry, falling back to `/apps/Edirom-Online-Backend/`. This absolute path is correct when `EXIST_CONTEXT_PATH=/` (the default). Override this when the backend is served at a different URL. Override this when the backend is served at a different URL, e.g.:
+
+  ```bash
+  docker run -e BACKEND_URL="https://edirom.example.com/exist/apps/Edirom-Online-Backend/" ...
+  ```
+
 
 ## Building the Docker Image
 
-> [!WARNING] This repository uses gitmodules. This requires a recursive cehckout or fetching the submodles after cloning.
+> [!WARNING] This repository uses gitmodules. This requires a recursive checkout or fetching the submodules after cloning.
 
 For a recursive clone do:
 ```bash
 git clone --recurse-submodules https://github.com/baz-ga/docker-edirom-online.git
-````
+```
 
-For activating the submodules after cloning tis repositora do:
+For activating the submodules after cloning this repository do:
 ```bash
 git submodule update --init --recursive
 ```
+
+### Building from Local Source (`Dockerfile.local`)
+
+To build from local source repositories without a GitHub token, use `Dockerfile.local` with named build contexts pointing at your local checkouts:
+
+```bash
+docker build -f Dockerfile.local \
+  --build-context backend=/path/to/Edirom-Online-Backend \
+  --build-context frontend=/path/to/Edirom-Online-Frontend \
+  -t edirom-online:local \
+  .
+```
+
+<!-- TODO -->
+?Important build arguments:
+
+* **BE_PORT** — backend port injected into the frontend build (default: `8080`)
+* **BE_HOST** — backend host injected into the frontend build (default: `localhost`)
+* **BUILD_DATE** – =$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+* **EXIST_DEFAULT_APP_PATH**
+* **SENCHA_BUILD_ENVIRONMENT** – `[production|testing|native|package]` defaults to production
+
+### Building from GitHub (`Dockerfile`)
 
 > [!WARNING] Building this Docker image requires a *GitHub API Token* for fetching the Edirom XAR archives. There are several ways to provide your GitHub API Token securely (cf. [Docker build secrets documentation](https://docs.docker.com/build/building/secrets/)).
 
@@ -112,7 +157,7 @@ export GITHUB_API_TOKEN="ghp_your_token_here"
 After doing so you can submit in your call to `build.sh` by adding:
 
 ```bash
---secret type=env,id=GITHUB_API_TOKEN 
+--secret type=env,id=GITHUB_API_TOKEN
 ```
 
 > [!IMPORTANT]
@@ -124,7 +169,10 @@ After doing so you can submit in your call to `build.sh` by adding:
 
 
 > [!IMPORTANT]
-> If you want to include additional XAR archives when building the image, place them in the `add-xars` directory next to the Docker file. These files will get copied by the *xar-fetcher* stage and handed to the *edirom-online* stage, which will place them in the eXist-db `autodeploy` directory!
+> If you want to include additional XAR archives when building the image, place them in the `add-xars` directory next to the Dockerfile. These files will get copied by the *xar-fetcher* stage and handed to the *edirom-online* stage, which will place them in the eXist-db `autodeploy` directory!
+
+> [!NOTE]
+> The `config-deployer/` directory contains a minimal XAR package whose `post-install.xql` writes `config.json` to the Edirom Online Frontend collection after eXist-db deploys the application. This XAR is built and added to `autodeploy` automatically during the Docker image build — no manual action is required.
 
 ### Controlling the Deployed Edirom Online Version
 
@@ -204,5 +252,5 @@ It is the responsibility of the user of any pre-built image to ensure that any u
  This Docker image was developed in the context of the *Bernd Alois Zimmermann-Gesamtausgabe* project (BAZ-GA).
 
  The *Bernd Alois Zimmermann-Gesamtausgabe. Historisch-kritische Ausgabe seiner Werke, Schriften und Briefe* (*Bernd Alois Zimmermann Complete Edition. Historical-Critical Edition of his Works, Writings, and Letters*) are promoted by the Union of the German Academies of Sciences and Humanities, represented by the Academy of Sciences and Humanities Berlin-Brandenburg and the Academy of Sciences and Literature | Mainz, funded by the Federal Ministry of Education and Research, Bonn and Berlin, the Berlin Senate Department for Higher Education and Research, Health and Long-Term Care and the Hessian Ministry of Science and the Arts, Wiesbaden.
- 
+
  For more information, please visit: https://www.zimmermann-gesamtausgabe.de.
