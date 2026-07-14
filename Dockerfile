@@ -11,6 +11,7 @@ ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_OWNER
 ARG EDIROM_REF
 ARG EDIROM_COMMIT
+ARG ROASTER_VERSION
 
 # setup build date
 ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -62,6 +63,7 @@ FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
 ARG EDIROM_VERSION_STRATEGY
 ARG EDIROM_OWNER
 ARG EDIROM_REF
+ARG ROASTER_VERSION
 
 ARG BUILD_DATE
 
@@ -69,6 +71,7 @@ ARG BUILD_DATE
 ENV EDIROM_VERSION_STRATEGY=${EDIROM_VERSION_STRATEGY:-1.0.0}
 ENV EDIROM_OWNER=${EDIROM_OWNER:-"Edirom"}
 ENV EDIROM_REF=${EDIROM_REF:-"v$EDIROM_VERSION_STRATEGY"}
+ENV ROASTER_VERSION=${ROASTER_VERSION:-1.11.0}
 
 # Add Sencha Cmd to PATH
 ENV PATH="/opt/Sencha/Cmd:${PATH}"
@@ -101,6 +104,12 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
     && mkdir -p /tmp/add-xars \
     && cp Edirom-Online*.xar /tmp/add-xars/
 
+RUN echo "Downloading dependencies..." && \
+    mkdir -p /opt/roaster && \
+    cd /opt/roaster && \
+    curl -L -O "https://exist-db.org/exist/apps/public-repo/public/roaster-${ROASTER_VERSION}.xar" && \
+    cp roaster-*.xar /tmp/add-xars/;
+    
     #/bin/bash -c "echo \$GITHUB_API_TOKEN \$EDIROM_OWNER Edirom-Online \$EDIROM_VERSION_STRATEGY \$EDIROM_REF"
 
     # The xar-fetcher-entrypoint.sh writes EDIROM_COMMIT to /tmp/build_env.
