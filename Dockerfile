@@ -155,15 +155,19 @@ ENV EXIST_ENV=development
 # LABEL about this image
 LABEL org.opencontainers.image.title="Docker Edirom Online"
 LABEL org.opencontainers.image.description="A Dockerimage running on eXist-db with a predeployed Edirom Online, and options for deploying additional XAR archives on-build or on-run."
-LABEL org.opencontainers.image.documentation="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
-LABEL org.opencontainers.image.url="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
-LABEL org.opencontainers.image.authors="Benjamin W. Bohl https://github.com/${EDIROM_OWNER}"
+# These describe THIS image and its repository, so they are fixed. They must not
+# be derived from EDIROM_OWNER, which selects the org to fetch the Edirom Online
+# XARs from: building with EDIROM_OWNER=Edirom would otherwise make the image
+# claim its source is Edirom/docker-edirom-online, which does not exist.
+LABEL org.opencontainers.image.documentation="https://github.com/baz-ga/docker-edirom-online"
+LABEL org.opencontainers.image.url="https://github.com/baz-ga/docker-edirom-online"
+LABEL org.opencontainers.image.authors="Benjamin W. Bohl https://github.com/bwbohl"
 LABEL org.opencontainers.image.vendor="Benjamin W. Bohl"
 LABEL org.opencontainers.image.created=$BUILD_DATE
 LABEL org.opencontainers.image.base.name="stadlerpeter/existdb:6.4.0"
 
 # LABEL about the software
-LABEL org.opencontainers.image.source="https://github.com/${EDIROM_OWNER}/docker-edirom-online"
+LABEL org.opencontainers.image.source="https://github.com/baz-ga/docker-edirom-online"
 LABEL org.opencontainers.image.version=$EDIROM_VERSION_STRATEGY
 LABEL org.opencontainers.image.revision=$EDIROM_COMMIT
 LABEL org.opencontainers.image.licenses="MIT"
