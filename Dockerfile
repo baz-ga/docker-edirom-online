@@ -20,7 +20,7 @@ ARG BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 ARG EXIST_DEFAULT_APP_PATH
 
 # STAGE 1a: Resolve Edirom commit SHA only (no XAR download)
-FROM bwbohl/sencha-cmd:2.1.0 AS commit-resolver
+FROM bwbohl/sencha-cmd:2.1.1 AS commit-resolver
 
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
@@ -57,7 +57,7 @@ RUN --mount=type=secret,id=GITHUB_API_TOKEN \
       "$EDIROM_OWNER" Edirom-Online "$EDIROM_VERSION_STRATEGY" "$EDIROM_REF"
 
 # STAGE 1b
-FROM bwbohl/sencha-cmd:2.1.0 AS xar-fetcher
+FROM bwbohl/sencha-cmd:2.1.1 AS xar-fetcher
 
 # setup build arguments
 ARG EDIROM_VERSION_STRATEGY
@@ -117,7 +117,7 @@ RUN echo "Downloading dependencies..." && \
 
 # STAGE 1c: Build edirom config-deployer
 
-FROM bwbohl/sencha-cmd:2.1.0 AS config-deployer-builder
+FROM bwbohl/sencha-cmd:2.1.1 AS config-deployer-builder
 
 WORKDIR /opt
 
