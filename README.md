@@ -13,7 +13,7 @@ Both Dockerfiles share a common final stage (**edirom-online**) described below.
 
 * STAGE 1: **xar-fetcher**
 
-  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. It also offers an option to inject local XAR archives in the image build (cf. [Building the Docker Image](#building-the-docker-image)).
+  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.1* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
 
 * STAGE 2: **edirom-online**
 
@@ -151,13 +151,7 @@ When issuing the build, you should provide this file using the `--secret` option
 Alternatively you can set the variable in your build environment’s shell, e.g.:
 
 ```bash
-export GITHUB_API_TOKEN="ghp_your_token_here"
-```
-
-After doing so you can submit in your call to `build.sh` by adding:
-
-```bash
---secret type=env,id=GITHUB_API_TOKEN
+docker build -t ghcr.io/baz-ga/docker-edirom-online:mytag --secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN .
 ```
 
 > [!IMPORTANT]
