@@ -6,7 +6,7 @@ This Docker image is a multi-stage Docker image and has the following stages:
 
 * STAGE 1: **xar-fetcher**
 
-  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.0* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
+  The *xar-fetcher* stage is based on *bwbohl/sencha-cmd:2.1.1* and uses multiple strategies to retrieve the EXPath Packages (XAR archives) to be deployed to *STAGE 2*. One option is to inject local XAR archives (cf. [Building the Docker Image](#building-the-docker-image)).
 
 * STAGE 2: **edirom-online**
 
@@ -17,7 +17,7 @@ This Docker image is a multi-stage Docker image and has the following stages:
 If you want to pull the latest version of a pre-built Docker image run:
 
 ```bash
-docker pull ghcr.io/bwbohl/docker-edirom-online:latest
+docker pull ghcr.io/baz-ga/docker-edirom-online:latest
 ```
 
 For available tags please visit: https://github.com/baz-ga/docker-edirom-online/pkgs/container/docker-edirom-online
@@ -26,19 +26,19 @@ For available tags please visit: https://github.com/baz-ga/docker-edirom-online/
 
 > [!NOTE]
 > ```bash
-> docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/bwbohl/docker-edirom-online
+> docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/baz-ga/docker-edirom-online
 > ```
 
 If you want to run the Docker image and start using eXist-db with an installed Edirom Online, e.g., run:
 
 ```bash
-docker run -p 8080:8080 ghcr.io/bwbohl/docker-edirom-online
+docker run -p 8080:8080 ghcr.io/baz-ga/docker-edirom-online
 ```
 
 Suppose you want to deploy additional XAR archives to the eXist database when running the Docker image for the first time. In that case, you can use the Docker `-v` flag to mount a local directory to the Docker image’s `/var/add-xars` directory, e.g. by running:
 
 ```bash
-docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/bwbohl/docker-edirom-online
+docker run -p 8080:8080 -v `pwd`/add-xars:/var/add-xars ghcr.io/baz-ga/docker-edirom-online
 ```
 
 The final image (i.e., *STAGE 2*) will copy any XAR archive in your local directory to the autodeploy directory of the eXist database and thus deploy it on first run.
@@ -80,7 +80,7 @@ GITHUB_API_TOKEN=ghp_************************
 When issuing the build, you should provide this file using the `--secret`option, as in the following example:
 
 ```bash
-docker build -t ghcr.io/bwbohl/docker-edirom-online:mytag --secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN .
+docker build -t ghcr.io/baz-ga/docker-edirom-online:mytag --secret type=file,id=GITHUB_API_TOKEN,src=/PATH/TO/MY/SECRET/MY_GITHUB_API_TOKEN .
 ```
 
 > [!IMPORTANT]
