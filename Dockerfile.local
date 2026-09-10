@@ -44,7 +44,7 @@ ARG SENCH_BUILD_ENVIRONMENT
 
 
 # STAGE 1a: Build backend XAR from local source
-FROM bwbohl/sencha-cmd:2.1.0 AS local-backend-builder
+FROM bwbohl/sencha-cmd:2.1.1 AS local-backend-builder
 
 WORKDIR /opt/eo-backend
 
@@ -54,7 +54,7 @@ RUN ant
 
 
 # STAGE 1b: Build frontend XAR from local source
-FROM bwbohl/sencha-cmd:2.1.0 AS local-frontend-builder
+FROM bwbohl/sencha-cmd:2.1.1 AS local-frontend-builder
 
 ARG BE_PORT
 ARG BE_HOST
@@ -82,7 +82,7 @@ RUN touch local.properties \
 
 
 # STAGE 1c: Build edirom config-deployer
-FROM bwbohl/sencha-cmd:2.1.0 AS local-config-deployer-builder
+FROM bwbohl/sencha-cmd:2.1.1 AS local-config-deployer-builder
 
 ENV ROASTER_VERSION=${ROASTER_VERSION:-1.11.0}
 WORKDIR /opt
